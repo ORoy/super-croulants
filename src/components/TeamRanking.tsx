@@ -1,22 +1,14 @@
 import { useState } from "react";
-import { Box, Tabs, Tab, Typography } from "@mui/material";
-import DataTable from "./DataTable";
-import { useSheetData } from "../hooks/useSheetData";
-
-const TEAM_SHEET_NAME = "Classement Saison Régulière 2025-26";
+import { Box, Tabs, Tab, Typography, Paper } from "@mui/material";
 
 const teamTabs = [
-  { label: "SAISON RÉGULIÈRE + SÉRIES", range: "B3:T8" },
-  { label: "SÉRIES ÉLIMINATOIRES", range: "B10:T15" },
-  { label: "SAISON RÉGULIÈRE", range: "B17:T22" },
+  { label: "Saison Régulière + Séries" },
+  { label: "Séries Éliminatoires" },
+  { label: "Saison Régulière" },
 ];
 
 export default function TeamRanking() {
   const [activeTab, setActiveTab] = useState(0);
-  const { data, loading, error } = useSheetData(
-    teamTabs[activeTab].range,
-    TEAM_SHEET_NAME
-  );
 
   return (
     <Box>
@@ -31,10 +23,12 @@ export default function TeamRanking() {
         sx={{ mb: 2 }}
       >
         {teamTabs.map((tab, idx) => (
-          <Tab key={tab.range} label={tab.label} />
+          <Tab key={idx} label={tab.label} />
         ))}
       </Tabs>
-      <DataTable data={data} loading={loading} error={error} />
+      <Paper sx={{ p: 3 }}>
+        <Typography>Content for {teamTabs[activeTab].label}</Typography>
+      </Paper>
     </Box>
   );
 }

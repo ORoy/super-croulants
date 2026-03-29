@@ -4,14 +4,14 @@ import DataTable from "./DataTable";
 import { useSheetData } from "../hooks/useSheetData";
 
 const playerTabs = [
-  { label: "CLASSEMENT JOUEURS SAISON RÉGULIÈRE", range: "B2:I72" },
-  { label: "CLASSEMENT JOUEURS SÉRIES", range: "K2:R72" },
-  { label: "STATS JOUEURS SAISON + SÉRIES", range: "T2:AA72" },
-  { label: "CLASSEMENT PÉNALITÉS", range: "AC2:AF72" },
-  { label: "CLASSEMENT ÉTOILES", range: "AH2:AL72" },
-  { label: "CLASSEMENT GARDIENS", range: "AN2:AU72" },
-  { label: "CLASSEMENT DEPUIS 1997-1998", range: "AW2:BF307" },
-  { label: "CLASSEMENT - MOYENNE PTS/MATCH > 2.00", range: "BI2:BP17" },
+  { label: "Saison Régulière", range: "B2:I72" },
+  { label: "Séries", range: "K2:R72" },
+  { label: "Saison + Séries", range: "T2:AA72" },
+  { label: "Pénalités", range: "AC2:AF72" },
+  { label: "Joueurs étoiles", range: "AH2:AL72" },
+  { label: "Gardiens", range: "AN2:AU72" },
+  { label: "1997-1998", range: "AW2:BF307" },
+  { label: "Moyenne pts/match", range: "BI2:BP17" },
 ];
 
 export default function PlayersTabs() {

@@ -56,6 +56,9 @@ export const theme = createTheme({
     MuiTableRow: {
       styleOverrides: {
         root: {
+          "&:nth-of-type(odd)": {
+            backgroundColor: "#f9fafb",
+          },
           "&:last-child td": {
             borderBottom: "1px solid #f0f0f0",
           },

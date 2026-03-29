@@ -38,3 +38,23 @@ export const fetchSheetData = async (
 
   return dataObjects;
 };
+
+export const fetchSheetRawData = async (
+  range: string,
+  apiKey: string,
+  sheetName: string = DEFAULT_SHEET_NAME
+): Promise<string[][]> => {
+  if (!apiKey) {
+    throw new Error("Google Sheets API key not configured");
+  }
+
+  const fullRange = `'${sheetName}'!${range}`;
+  const valuesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(
+    fullRange
+  )}?key=${apiKey}`;
+
+  const response = await fetch(valuesUrl);
+  const result = await response.json();
+
+  return result.values || [];
+};

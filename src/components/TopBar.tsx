@@ -15,8 +15,9 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { NavLink, useLocation } from "react-router-dom";
 
 const sections = [
-  { label: "CLASSEMENT JOUEURS", path: "/players" },
-  { label: "CLASSEMENT ÉQUIPES", path: "/teams" },
+  { label: "JOUEURS", path: "/players" },
+  { label: "ÉQUIPES", path: "/teams" },
+  { label: "CALENDRIER", path: "/calendar" },
 ];
 
 export default function TopBar() {

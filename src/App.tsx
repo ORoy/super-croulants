@@ -8,6 +8,7 @@ import { theme } from "./theme";
 import TopBar from "./components/TopBar";
 import PlayersTabs from "./components/PlayersTabs";
 import TeamRanking from "./components/TeamRanking";
+import Calendar from "./components/Calendar";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
               <Routes>
                 <Route path="/players/*" element={<PlayersTabs />} />
                 <Route path="/teams" element={<TeamRanking />} />
+                <Route path="/calendar" element={<Calendar />} />
                 <Route path="/*" element={<PlayersTabs />} />
               </Routes>
             </Box>
