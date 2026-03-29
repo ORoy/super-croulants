@@ -15,6 +15,7 @@ import {
 
 const SHEET_ID = "1ox-qt2fNqSYlord98tRPTX7S5L4TlnwjVltQDPoo4R4";
 const TAB_NAME = "Super Croulants Gérants 2025-26";
+const API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY;
 
 export default function App() {
   const [data, setData] = useState([]);
@@ -22,12 +23,51 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const url = `https://opensheet.elk.sh/${SHEET_ID}/${encodeURIComponent(TAB_NAME)}`;
+    if (!API_KEY) {
+      setError("Google Sheets API key not configured");
+      setLoading(false);
+      return;
+    }
 
-    fetch(url)
+    // First, get sheet metadata to find the sheet ID by name
+    const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?key=${API_KEY}`;
+
+    fetch(metadataUrl)
       .then(res => res.json())
-      .then(data => {
-        setData(data);
+      .then(sheetsData => {
+        // Find the sheet with matching title
+        const sheet = sheetsData.sheets.find(
+          (s: any) => s.properties.title === TAB_NAME
+        );
+        if (!sheet) {
+          throw new Error(`Sheet "${TAB_NAME}" not found`);
+        }
+        const sheetId = sheet.properties.sheetId;
+
+        // Get the sheet data
+        const range = `'${TAB_NAME}'!A:Z`;
+        const valuesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?key=${API_KEY}`;
+
+        return fetch(valuesUrl).then(res => res.json());
+      })
+      .then(result => {
+        const rows = result.values || [];
+        if (rows.length === 0) {
+          setData([]);
+          setLoading(false);
+          return;
+        }
+
+        // Convert rows to objects using first row as headers
+        const headers = rows[0];
+        const dataObjects = rows.slice(1).map(row =>
+          headers.reduce((obj: Record<string, string>, header: string, index: number) => {
+            obj[header] = row[index] || "";
+            return obj;
+          }, {})
+        );
+
+        setData(dataObjects);
         setLoading(false);
       })
       .catch(err => {
