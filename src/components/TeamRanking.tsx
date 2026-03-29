@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Tabs, Tab } from "@mui/material";
+import { Box, Tabs, Tab, Typography } from "@mui/material";
 import DataTable from "./DataTable";
 import { useSheetData } from "../hooks/useSheetData";
 
@@ -20,10 +20,14 @@ export default function TeamRanking() {
 
   return (
     <Box>
+      <Typography variant="h5" sx={{ mb: 3, fontWeight: "bold", color: "primary.main" }}>
+        Classement Équipes
+      </Typography>
       <Tabs
         value={activeTab}
         onChange={(event, newValue) => setActiveTab(newValue)}
-        variant="fullWidth"
+        variant="scrollable"
+        scrollButtons="auto"
         sx={{ mb: 2 }}
       >
         {teamTabs.map((tab, idx) => (

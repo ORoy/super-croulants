@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Tabs, Tab, Box } from "@mui/material";
+import { Tabs, Tab, Box, Typography } from "@mui/material";
 import DataTable from "./DataTable";
 import { useSheetData } from "../hooks/useSheetData";
 
@@ -20,6 +20,9 @@ export default function PlayersTabs() {
 
   return (
     <Box>
+      <Typography variant="h5" sx={{ mb: 3, fontWeight: "bold", color: "primary.main" }}>
+        Classement Joueurs
+      </Typography>
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
           value={activeTab}

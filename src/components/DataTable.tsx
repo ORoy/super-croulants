@@ -48,17 +48,10 @@ export default function DataTable({ data, loading, error }: DataTableProps) {
   return (
     <TableContainer component={Paper}>
       <Table>
-        <TableHead sx={{ backgroundColor: "#1976d2" }}>
+        <TableHead>
           <TableRow>
             {headers.map(header => (
-              <TableCell
-                key={header}
-                sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  backgroundColor: "#1976d2",
-                }}
-              >
+              <TableCell key={header}>
                 {header}
               </TableCell>
             ))}
@@ -66,15 +59,9 @@ export default function DataTable({ data, loading, error }: DataTableProps) {
         </TableHead>
         <TableBody>
           {data.map((row, index) => (
-            <TableRow
-              key={index}
-              sx={{
-                "&:hover": { backgroundColor: "#f5f5f5" },
-                "&:nth-of-type(even)": { backgroundColor: "#fafafa" },
-              }}
-            >
+            <TableRow key={index}>
               {headers.map(header => (
-                <TableCell key={`${index}-${header}`} sx={{ py: 2 }}>
+                <TableCell key={`${index}-${header}`}>
                   {row[header]}
                 </TableCell>
               ))}
