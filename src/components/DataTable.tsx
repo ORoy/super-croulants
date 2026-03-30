@@ -58,9 +58,18 @@ export default function DataTable({
     );
   }
 
+  const minTableWidth = Math.max(headers.length * 120, 700);
+
   return (
-    <TableContainer component={Paper}>
-      <Table>
+    <TableContainer
+      component={Paper}
+      sx={{
+        width: "100%",
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+      }}
+    >
+      <Table sx={{ minWidth: minTableWidth }}>
         <TableHead>
           <TableRow>
             {headers.map(header => (
