@@ -16,10 +16,23 @@ interface DataTableProps {
   data: RowData[];
   loading: boolean;
   error: string | null;
+  columnOrder?: string[];
+  columnLabels?: Record<string, string>;
 }
 
-export default function DataTable({ data, loading, error }: DataTableProps) {
-  const headers = data.length > 0 ? Object.keys(data[0]) : [];
+export default function DataTable({
+  data,
+  loading,
+  error,
+  columnOrder,
+  columnLabels,
+}: DataTableProps) {
+  const headers =
+    data.length > 0
+      ? columnOrder && columnOrder.length > 0
+        ? columnOrder
+        : Object.keys(data[0])
+      : [];
 
   if (loading) {
     return (
@@ -52,7 +65,7 @@ export default function DataTable({ data, loading, error }: DataTableProps) {
           <TableRow>
             {headers.map(header => (
               <TableCell key={header}>
-                {header}
+                {columnLabels?.[header] ?? header}
               </TableCell>
             ))}
           </TableRow>

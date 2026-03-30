@@ -1,76 +1,123 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Box, Tabs, Tab, Typography } from "@mui/material";
-import { useSheetData } from "../hooks/useSheetData";
+import { fetchSheetRawData } from "../utils/sheetFetch";
 import DataTable from "./DataTable";
 import type { RowData } from "../utils/sheetFetch";
 
 const CALENDAR_SHEET_NAME = "Calendrier/Résultats/Étoiles 2025-26";
 
 const calendarTabs = [
-  { label: "Matchs", range: "B2:T37" },
-  { label: "Étoiles", range: "U4:AA35" },
+  { label: "Matchs", range: "B1:T37" },
+  { label: "Étoiles", range: "U4:AA37" },
 ];
 
-// Transform matches: each row has 2 matches (B-K and L-T)
-// Split them into separate rows with standardized headers
-const transformMatches = (data: RowData[]): RowData[] => {
-  if (data.length === 0) return [];
+const MATCH_COLUMNS = 10;
 
-  // The first row is headers, but get the object keys to see what actually survived
-  // (duplicates in the header row cause object key collapse)
-  const headerRow = data[0];
-  const allKeys = Object.keys(headerRow);
-  
-  // Split into two sets of columns (11 for first match, rest for second)
-  const firstMatchKeys = allKeys.slice(0, 11); // B-K
-  const secondMatchKeys = allKeys.slice(11); // L-T (or however many remain)
-  
-  // Get the actual header values from the first match columns
-  const firstMatchHeaders = firstMatchKeys.map((k) => headerRow[k]);
-  
-  // Start with the header row
-  const transformed: RowData[] = [headerRow];
-  
-  // Process data rows starting from index 2 (skip index 0=headers, index 1=empty row)
-  for (let i = 2; i < data.length; i++) {
-    const row = data[i];
-    
-    // Skip rows that are completely empty
-    if (!Object.values(row).some((v) => v)) continue;
-    
-    // First match
-    const firstMatch: RowData = {};
-    firstMatchKeys.forEach((key, idx) => {
-      firstMatch[firstMatchHeaders[idx] || `col_${idx}`] = row[key];
-    });
-    if (Object.values(firstMatch).some((v) => v)) {
-      transformed.push(firstMatch);
+interface MatchesTransformResult {
+  rows: RowData[];
+  columnOrder: string[];
+  columnLabels: Record<string, string>;
+}
+
+interface TableTransformResult {
+  rows: RowData[];
+  columnOrder: string[];
+  columnLabels: Record<string, string>;
+}
+
+const createColumnKey = (index: number) => `match_col_${index}`;
+
+// Parse the raw sheet where each source row contains two games:
+// first game in columns 0..9 and second game in columns 10..18.
+const transformMatches = (rawRows: string[][]): MatchesTransformResult => {
+  const emptyResult: MatchesTransformResult = {
+    rows: [],
+    columnOrder: [],
+    columnLabels: {},
+  };
+
+  if (rawRows.length === 0) {
+    return emptyResult;
+  }
+
+  const headerRowIndex = rawRows.findIndex(
+    row => row[0] === "Sem" && row[1] === "Date"
+  );
+
+  if (headerRowIndex === -1) {
+    return emptyResult;
+  }
+
+  const headerLabels = rawRows[headerRowIndex].slice(0, MATCH_COLUMNS);
+  const columnOrder = headerLabels.map((_, index) => createColumnKey(index));
+  const columnLabels = columnOrder.reduce((acc, key, index) => {
+    acc[key] = headerLabels[index] ?? "";
+    return acc;
+  }, {} as Record<string, string>);
+
+  const mapValuesToRow = (values: string[]): RowData => {
+    const row: RowData = {};
+
+    for (let index = 0; index < MATCH_COLUMNS; index++) {
+      row[createColumnKey(index)] = values[index] ?? "";
     }
-    
-    // Second match
-    const secondMatch: RowData = {};
-    secondMatchKeys.forEach((key, idx) => {
-      secondMatch[firstMatchHeaders[idx] || `col_${idx}`] = row[key];
-    });
-    if (Object.values(secondMatch).some((v) => v)) {
-      transformed.push(secondMatch);
+
+    return row;
+  };
+
+  const hasVisibleData = (values: string[]): boolean =>
+    values.some(value => value?.trim() !== "");
+
+  const rows: RowData[] = [];
+
+  for (let rowIndex = headerRowIndex + 1; rowIndex < rawRows.length; rowIndex++) {
+    const source = rawRows[rowIndex] ?? [];
+
+    const firstGameValues = source.slice(0, MATCH_COLUMNS);
+
+    // Second game has no "Sem" column, so we prepend the week from first half.
+    const secondGameValues = [source[0] ?? "", ...source.slice(10, 19)];
+
+    if (hasVisibleData(firstGameValues)) {
+      rows.push(mapValuesToRow(firstGameValues));
+    }
+
+    if (hasVisibleData(secondGameValues)) {
+      rows.push(mapValuesToRow(secondGameValues));
     }
   }
-  
-  return transformed;
+
+  return { rows, columnOrder, columnLabels };
 };
 
 export default function Calendar() {
   const [activeTab, setActiveTab] = useState(0);
-  const { data, loading, error } = useSheetData(
-    calendarTabs[activeTab].range,
-    CALENDAR_SHEET_NAME
-  );
+  const [rawData, setRawData] = useState<string[][]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Transform matches data if on matches tab
-  const displayData = useMemo(() => {
-    return activeTab === 0 ? transformMatches(data) : data;
-  }, [data, activeTab]);
+  const apiKey = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY;
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    fetchSheetRawData(calendarTabs[activeTab].range, apiKey, CALENDAR_SHEET_NAME)
+      .then(data => {
+        setRawData(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [activeTab, apiKey]);
+
+  const matchesView = useMemo(() => transformMatches(rawData), [rawData]);
+  const starsView = useMemo(() => convertRawToTable(rawData), [rawData]);
+
+  const displayData = activeTab === 0 ? matchesView.rows : starsView.rows;
 
   return (
     <Box>
@@ -88,7 +135,55 @@ export default function Calendar() {
           <Tab key={idx} label={tab.label} />
         ))}
       </Tabs>
-      <DataTable data={displayData} loading={loading} error={error} />
+      <DataTable
+        data={displayData}
+        loading={loading}
+        error={error}
+        columnOrder={activeTab === 0 ? matchesView.columnOrder : starsView.columnOrder}
+        columnLabels={activeTab === 0 ? matchesView.columnLabels : starsView.columnLabels}
+      />
     </Box>
   );
 }
+
+// Convert raw sheet rows to table rows while preserving exact column order.
+const convertRawToTable = (rawRows: string[][]): TableTransformResult => {
+  const emptyResult: TableTransformResult = {
+    rows: [],
+    columnOrder: [],
+    columnLabels: {},
+  };
+
+  if (rawRows.length === 0) {
+    return emptyResult;
+  }
+
+  const headerRow = rawRows[0] ?? [];
+  const headerIndices = headerRow
+    .map((value, index) => ({ value, index }))
+    .filter(item => item.value?.trim() !== "");
+
+  const columnOrder = headerIndices.map(item => `star_col_${item.index}`);
+  const columnLabels = headerIndices.reduce((acc, item) => {
+    acc[`star_col_${item.index}`] = item.value;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const rows: RowData[] = [];
+
+  for (let rowIndex = 1; rowIndex < rawRows.length; rowIndex++) {
+    const source = rawRows[rowIndex] ?? [];
+    const row: RowData = {};
+
+    headerIndices.forEach(item => {
+      row[`star_col_${item.index}`] = source[item.index] ?? "";
+    });
+
+    const hasVisibleData = Object.values(row).some(value => value.trim() !== "");
+    if (hasVisibleData) {
+      rows.push(row);
+    }
+  }
+
+  return { rows, columnOrder, columnLabels };
+};
