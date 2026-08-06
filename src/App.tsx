@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header";
+import Leaderboard from "./components/Leaderboard";
 import { colors } from "./theme/tokens";
 
 export default function App() {
@@ -17,7 +18,7 @@ export default function App() {
         <div style={{ maxWidth: 1320, margin: "0 auto", padding: "clamp(14px,4vw,28px)" }}>
           <Routes>
             <Route path="/standings" element={<div>Standings — TODO</div>} />
-            <Route path="/leaderboard" element={<div>Leaderboard — TODO</div>} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/teams" element={<div>Teams — TODO</div>} />
             <Route path="/calendar" element={<div>Calendar — TODO</div>} />
             <Route path="/players/*" element={<Navigate to="/leaderboard" replace />} />
