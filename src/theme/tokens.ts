@@ -1,0 +1,10 @@
+// Centralized dark-theme color tokens, shared by the header/nav shell and
+// every rebuilt page view. Keep in sync with src/index.css.
+export const colors = {
+  background: "oklch(0.14 0.02 250)",
+  cardBackground: "oklch(0.18 0.02 250)",
+  border: "oklch(0.27 0.02 250)",
+  mutedText: "oklch(0.68 0.02 250)",
+  primaryText: "oklch(0.95 0.01 250)",
+  accent: "#5D7C9A",
+} as const;

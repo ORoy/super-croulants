@@ -1,0 +1,16 @@
+body {
+  margin: 0;
+  background: oklch(0.14 0.02 250);
+  font-family: "Work Sans", sans-serif;
+  color: oklch(0.95 0.01 250);
+}
+
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.32 0.02 250);
+  border-radius: 4px;
+}
