@@ -2,17 +2,7 @@ import { useState } from "react";
 import { Tabs, Tab, Box, Typography } from "@mui/material";
 import DataTable from "./DataTable";
 import { useSheetData } from "../hooks/useSheetData";
-
-const playerTabs = [
-  { label: "Saison Régulière", range: "B2:I72" },
-  { label: "Séries", range: "K2:R72" },
-  { label: "Saison + Séries", range: "T2:AA72" },
-  { label: "Pénalités", range: "AC2:AF72" },
-  { label: "Joueurs étoiles", range: "AH2:AL72" },
-  { label: "Gardiens", range: "AN2:AU72" },
-  { label: "1997-1998", range: "AW2:BF307" },
-  { label: "Moyenne pts/match", range: "BI2:BP17" },
-];
+import { playerTabs } from "../config/sheets";
 
 export default function PlayersTabs() {
   const [activeTab, setActiveTab] = useState(0);
