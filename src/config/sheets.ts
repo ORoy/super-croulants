@@ -3,6 +3,7 @@ export const SHEET_ID = "1ox-qt2fNqSYlord98tRPTX7S5L4TlnwjVltQDPoo4R4";
 export const SHEET_NAMES = {
   players: "Classement Joueurs 2025-26",
   calendar: "Calendrier/Résultats/Étoiles 2025-26",
+  standings: "Classement Saison Régulière 2025-26",
 } as const;
 
 export const playerTabs = [
