@@ -4,7 +4,11 @@ export const SHEET_NAMES = {
   players: "Classement Joueurs 2025-26",
   calendar: "Calendrier/Résultats/Étoiles 2025-26",
   standings: "Classement Saison Régulière 2025-26",
+  teamColors: "BD Site WEB",
 } as const;
+
+// Équipe, Couleur Fond, Couleur text — 4 rows, one per team.
+export const teamColorsRange = "A1:C5";
 
 export const playerTabs = [
   { label: "Saison Régulière", range: "B2:I72" },
