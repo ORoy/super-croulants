@@ -1,98 +1,12 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSheetRawData } from "../hooks/useSheetData";
 import { calendarTabs, SHEET_NAMES } from "../config/sheets";
 import { colors } from "../theme/tokens";
+import { transformMatches, type Match } from "../utils/matches";
 
-const MATCH_COLUMNS = 10;
 const MOBILE_BREAKPOINT = 720;
 const ROW_BORDER = "oklch(0.23 0.02 250)";
-
-interface Match {
-  id: string;
-  date: string;
-  awayTeam: string;
-  awayScore: number | null;
-  homeTeam: string;
-  homeScore: number | null;
-  played: boolean;
-  status: string;
-  resultLabel: string;
-}
-
-const parseScore = (value: string | undefined): number | null => {
-  const trimmed = value?.trim() ?? "";
-  if (trimmed === "" || trimmed === "--" || trimmed === "----") {
-    return null;
-  }
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-// Each game block has a fixed 10-column layout:
-// [phase, date, heure, ptsFS visiteur, buts visiteur, visiteurs, "@", local, buts local, ptsFS local]
-const buildMatch = (values: string[], id: string): Match | null => {
-  const date = values[1]?.trim() ?? "";
-  const awayTeam = values[5]?.trim() ?? "";
-  const homeTeam = values[7]?.trim() ?? "";
-
-  if (!date || date === "----" || !awayTeam || !homeTeam) {
-    return null;
-  }
-
-  const awayScore = parseScore(values[4]);
-  const homeScore = parseScore(values[8]);
-  const played = awayScore !== null && homeScore !== null;
-
-  return {
-    id,
-    date,
-    awayTeam,
-    awayScore,
-    homeTeam,
-    homeScore,
-    played,
-    status: played ? "Final" : "À venir",
-    resultLabel: played ? `${awayScore} – ${homeScore}` : "vs",
-  };
-};
-
-// Parse the raw sheet where each source row contains two games:
-// first game in columns 0..9 and second game in columns 10..18.
-const transformMatches = (rawRows: string[][]): Match[] => {
-  if (rawRows.length === 0) {
-    return [];
-  }
-
-  const headerRowIndex = rawRows.findIndex(
-    row => row[0] === "Calendrier" && row[1] === "Date"
-  );
-
-  if (headerRowIndex === -1) {
-    return [];
-  }
-
-  const matches: Match[] = [];
-
-  for (let rowIndex = headerRowIndex + 1; rowIndex < rawRows.length; rowIndex++) {
-    const source = rawRows[rowIndex] ?? [];
-
-    const firstGameValues = source.slice(0, MATCH_COLUMNS);
-    // Second game shares the first game's phase (column 0), then continues at column 10.
-    const secondGameValues = [source[0] ?? "", ...source.slice(10, 19)];
-
-    const firstMatch = buildMatch(firstGameValues, `${rowIndex}-1`);
-    if (firstMatch) {
-      matches.push(firstMatch);
-    }
-
-    const secondMatch = buildMatch(secondGameValues, `${rowIndex}-2`);
-    if (secondMatch) {
-      matches.push(secondMatch);
-    }
-  }
-
-  return matches;
-};
 
 const useIsMobile = (breakpoint: number): boolean => {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint);
@@ -117,9 +31,10 @@ interface MatchRowProps {
   match: Match;
   isMobile: boolean;
   accentResult?: boolean;
+  onClick: () => void;
 }
 
-function MatchRow({ match, isMobile, accentResult = false }: MatchRowProps) {
+function MatchRow({ match, isMobile, accentResult = false, onClick }: MatchRowProps) {
   const resultStyle: CSSProperties = {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: accentResult ? 700 : 800,
@@ -128,7 +43,10 @@ function MatchRow({ match, isMobile, accentResult = false }: MatchRowProps) {
 
   if (isMobile) {
     return (
-      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${ROW_BORDER}` }}>
+      <div
+        onClick={onClick}
+        style={{ padding: "12px 16px", borderBottom: `1px solid ${ROW_BORDER}`, cursor: "pointer" }}
+      >
         <div
           style={{
             display: "flex",
@@ -178,6 +96,7 @@ function MatchRow({ match, isMobile, accentResult = false }: MatchRowProps) {
 
   return (
     <div
+      onClick={onClick}
       style={{
         display: "grid",
         gridTemplateColumns: "90px 1fr auto 1fr 90px",
@@ -185,6 +104,7 @@ function MatchRow({ match, isMobile, accentResult = false }: MatchRowProps) {
         gap: 14,
         padding: "14px 16px",
         borderBottom: `1px solid ${ROW_BORDER}`,
+        cursor: "pointer",
       }}
     >
       <div style={{ fontSize: 13, color: colors.mutedText }}>{match.date}</div>
@@ -203,6 +123,7 @@ interface MatchSectionProps {
   isMobile: boolean;
   accentResult?: boolean;
   marginBottom?: number;
+  onSelectMatch: (match: Match) => void;
 }
 
 function MatchSection({
@@ -212,6 +133,7 @@ function MatchSection({
   isMobile,
   accentResult = false,
   marginBottom = 32,
+  onSelectMatch,
 }: MatchSectionProps) {
   return (
     <div style={{ marginBottom }}>
@@ -237,7 +159,13 @@ function MatchSection({
           <div style={{ padding: "16px", color: colors.mutedText, fontSize: 14 }}>{emptyMessage}</div>
         ) : (
           matches.map(match => (
-            <MatchRow key={match.id} match={match} isMobile={isMobile} accentResult={accentResult} />
+            <MatchRow
+              key={match.id}
+              match={match}
+              isMobile={isMobile}
+              accentResult={accentResult}
+              onClick={() => onSelectMatch(match)}
+            />
           ))
         )}
       </div>
@@ -246,6 +174,7 @@ function MatchSection({
 }
 
 export default function Calendar() {
+  const navigate = useNavigate();
   const { data: rawData, loading, error } = useSheetRawData(
     calendarTabs[0].range,
     SHEET_NAMES.calendar
@@ -281,6 +210,7 @@ export default function Calendar() {
             emptyMessage="Aucun match à venir."
             isMobile={isMobile}
             accentResult
+            onSelectMatch={match => navigate(`/calendar/${match.id}`)}
           />
           <MatchSection
             title="Résultats"
@@ -288,6 +218,7 @@ export default function Calendar() {
             emptyMessage="Aucun résultat pour le moment."
             isMobile={isMobile}
             marginBottom={0}
+            onSelectMatch={match => navigate(`/calendar/${match.id}`)}
           />
         </>
       )}

@@ -12,6 +12,8 @@ interface StatTableProps {
   rows: RowData[];
   /** Number of leading columns pinned while scrolling horizontally (max 2). */
   stickyColumnCount?: number;
+  /** When provided, rows become clickable (e.g. navigate to a detail page). */
+  onRowClick?: (row: RowData) => void;
 }
 
 const RANK_COLUMN_WIDTH = 44;
@@ -32,7 +34,7 @@ const headerCellStyle: CSSProperties = {
 // Generic table for stat leaderboards: sticky header, sticky leading columns
 // (rank + name), dark non-interactive rows. Columns are entirely driven by
 // the `columns` prop so callers control shape/order/labels per mode.
-export default function StatTable({ columns, rows, stickyColumnCount = 2 }: StatTableProps) {
+export default function StatTable({ columns, rows, stickyColumnCount = 2, onRowClick }: StatTableProps) {
   const stickyCount = Math.min(stickyColumnCount, 2, columns.length);
 
   const gridTemplateColumns = columns
@@ -89,11 +91,13 @@ export default function StatTable({ columns, rows, stickyColumnCount = 2 }: Stat
         {rows.map((row, rowIndex) => (
           <div
             key={rowIndex}
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
             style={{
               display: "grid",
               gridTemplateColumns,
               fontSize: 14,
               borderBottom: `1px solid ${colors.border}`,
+              cursor: onRowClick ? "pointer" : undefined,
             }}
           >
             {columns.map((column, index) => (

@@ -1,9 +1,11 @@
 import { useMemo, useState, type CSSProperties } from "react";
+import { useNavigate } from "react-router-dom";
 import StatTable, { type TableColumn } from "./StatTable";
 import { useSheetData } from "../hooks/useSheetData";
 import { playerTabs } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { normalizeRow } from "../utils/normalizeRow";
+import { encodePlayerId } from "../utils/playerId";
 
 const REGULAR_SERIES_BOTH_COLUMNS: TableColumn[] = [
   { key: "RANG", label: "RANG" },
@@ -22,12 +24,34 @@ interface Mode {
   /** Label shown on the mode-switcher pill. */
   displayLabel: string;
   columns: TableColumn[];
+  /** Row key holding the player's name, for Player Detail navigation. */
+  nameKey: string;
+  /** Row key holding the player's team, when this mode's columns include one. */
+  teamKey?: string;
 }
 
 const MODES: Mode[] = [
-  { sheetLabel: "Saison Régulière", displayLabel: "Saison Régulière", columns: REGULAR_SERIES_BOTH_COLUMNS },
-  { sheetLabel: "Séries", displayLabel: "Séries", columns: REGULAR_SERIES_BOTH_COLUMNS },
-  { sheetLabel: "Saison + Séries", displayLabel: "Saison + Séries", columns: REGULAR_SERIES_BOTH_COLUMNS },
+  {
+    sheetLabel: "Saison Régulière",
+    displayLabel: "Saison Régulière",
+    columns: REGULAR_SERIES_BOTH_COLUMNS,
+    nameKey: "JOUEURS",
+    teamKey: "ÉQUIPES",
+  },
+  {
+    sheetLabel: "Séries",
+    displayLabel: "Séries",
+    columns: REGULAR_SERIES_BOTH_COLUMNS,
+    nameKey: "JOUEURS",
+    teamKey: "ÉQUIPES",
+  },
+  {
+    sheetLabel: "Saison + Séries",
+    displayLabel: "Saison + Séries",
+    columns: REGULAR_SERIES_BOTH_COLUMNS,
+    nameKey: "JOUEURS",
+    teamKey: "ÉQUIPES",
+  },
   {
     sheetLabel: "Pénalités",
     displayLabel: "Pénalités",
@@ -37,6 +61,8 @@ const MODES: Mode[] = [
       { key: "ÉQUIPES", label: "ÉQUIPE" },
       { key: "TOTAL (min)", label: "TOTAL (MIN)" },
     ],
+    nameKey: "JOUEURS",
+    teamKey: "ÉQUIPES",
   },
   {
     sheetLabel: "Joueurs étoiles",
@@ -48,6 +74,8 @@ const MODES: Mode[] = [
       { key: "POINTS", label: "POINTS" },
       { key: "MOY PTS/ Match", label: "MOY PTS/MATCH" },
     ],
+    nameKey: "JOUEURS",
+    teamKey: "ÉQUIPES",
   },
   {
     sheetLabel: "Gardiens",
@@ -62,6 +90,8 @@ const MODES: Mode[] = [
       { key: "MOY LANCERS / MATCH", label: "MOY LANCERS/MATCH" },
       { key: "BUTS CONTRE", label: "BUTS CONTRE" },
     ],
+    nameKey: "JOUEURS",
+    teamKey: "ÉQUIPE",
   },
   {
     sheetLabel: "1997-1998",
@@ -78,6 +108,7 @@ const MODES: Mode[] = [
       { key: "PJ", label: "PJ" },
       { key: "Moy PTS / Match", label: "MOY PTS/MATCH" },
     ],
+    nameKey: "Nom",
   },
   {
     sheetLabel: "Moyenne pts/match",
@@ -92,6 +123,7 @@ const MODES: Mode[] = [
       { key: "PJ", label: "PJ" },
       { key: "Moy PTS / Match", label: "MOY PTS/MATCH" },
     ],
+    nameKey: "Nom",
   },
 ];
 
@@ -122,6 +154,7 @@ const pillActive: CSSProperties = {
 };
 
 export default function Leaderboard() {
+  const navigate = useNavigate();
   const [activeModeIndex, setActiveModeIndex] = useState(0);
   const activeMode = MODES[activeModeIndex];
 
@@ -186,7 +219,16 @@ export default function Leaderboard() {
       )}
 
       {!loading && !error && rows.length > 0 && (
-        <StatTable columns={activeMode.columns} rows={rows} />
+        <StatTable
+          columns={activeMode.columns}
+          rows={rows}
+          onRowClick={row => {
+            const name = row[activeMode.nameKey];
+            if (!name) return;
+            const team = activeMode.teamKey ? (row[activeMode.teamKey] ?? "") : "";
+            navigate(`/leaderboard/${encodePlayerId(name, team)}`);
+          }}
+        />
       )}
     </div>
   );

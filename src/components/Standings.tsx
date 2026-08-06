@@ -1,4 +1,5 @@
 import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSheetRawData } from "../hooks/useSheetData";
 import { SHEET_NAMES, calendarTabs } from "../config/sheets";
 import { colors } from "../theme/tokens";
@@ -214,6 +215,7 @@ function StandingsSection({
   columns: ColumnDef[];
   teams: DisplayTeam[];
 }) {
+  const navigate = useNavigate();
   const gridTemplateColumns = columns.map(c => c.width).join(" ");
   const minWidth = columns.reduce(
     (sum, c) => sum + (c.width.endsWith("fr") ? 180 : parseInt(c.width, 10)),
@@ -263,6 +265,7 @@ function StandingsSection({
         {teams.map(team => (
           <div
             key={team.team}
+            onClick={() => navigate(`/teams/${encodeURIComponent(team.team)}`)}
             style={{
               display: "grid",
               gridTemplateColumns,
@@ -271,6 +274,7 @@ function StandingsSection({
               fontSize: 14,
               alignItems: "center",
               borderBottom: `1px solid ${colors.border}`,
+              cursor: "pointer",
             }}
           >
             {columns.map(col => (
