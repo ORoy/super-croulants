@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: oklch(0.14 0.02 250); font-family: 'Work Sans', sans-serif; }
+    ::-webkit-scrollbar { height: 8px; width: 8px; }
+    ::-webkit-scrollbar-thumb { background: oklch(0.32 0.02 250); border-radius: 4px; }
+    @keyframes live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  </style>
+</helmet>
+<div style="min-height:100vh;background:oklch(0.14 0.02 250);color:oklch(0.95 0.01 250);font-family:'Work Sans',sans-serif;">
+
+  <!-- HEADER -->
+  <div style="position:sticky;top:0;z-index:10;background:oklch(0.16 0.02 250);border-bottom:1px solid oklch(0.28 0.02 250);">
+    <div style="max-width:1320px;margin:0 auto;padding:12px clamp(14px,4vw,28px);display:flex;align-items:center;gap:clamp(10px,2vw,28px);">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+        <div style="{{ logoGradient }}width:38px;height:38px;border-radius:8px;flex-shrink:0;"></div>
+        <div style="min-width:0;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(17px,4.5vw,22px);font-weight:800;letter-spacing:0.5px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">SUPER CROULANTS</div>
+          <div style="font-size:10px;letter-spacing:2px;color:oklch(0.68 0.02 250);text-transform:uppercase;">Rec Hockey League</div>
+        </div>
+      </div>
+      <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+        <div style="width:44px;height:44px;border-radius:8px;border:1px solid oklch(0.3 0.02 250);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;flex-direction:column;gap:4px;" onClick="{{ toggleMobileNav }}">
+          <div style="width:18px;height:2px;background:oklch(0.9 0.01 250);"></div>
+          <div style="width:18px;height:2px;background:oklch(0.9 0.01 250);"></div>
+          <div style="width:18px;height:2px;background:oklch(0.9 0.01 250);"></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isNotMobile }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          <div style="{{ navStandingsStyle }}" onClick="{{ goToStandings }}">Standings</div>
+          <div style="{{ navLeaderboardStyle }}" onClick="{{ goToLeaderboard }}">Leaderboard</div>
+          <div style="{{ navTeamsStyle }}" onClick="{{ goToTeams }}">Teams</div>
+          <div style="{{ navCalendarStyle }}" onClick="{{ goToCalendar }}">Calendar</div>
+          <div style="{{ navLiveStyle }}" onClick="{{ goToLive }}">Live</div>
+        </div>
+        <div style="margin-left:auto;font-size:13px;color:oklch(0.68 0.02 250);border:1px solid oklch(0.3 0.02 250);border-radius:6px;padding:6px 12px;white-space:nowrap;flex-shrink:0;">2025–26 Season</div>
+      </sc-if>
+    </div>
+    <sc-if value="{{ isMobileNavOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="border-top:1px solid oklch(0.28 0.02 250);padding:8px clamp(14px,4vw,28px) 14px;display:flex;flex-direction:column;gap:4px;">
+        <div style="{{ navStandingsStyleM }}" onClick="{{ goToStandingsM }}">Standings</div>
+        <div style="{{ navLeaderboardStyleM }}" onClick="{{ goToLeaderboardM }}">Leaderboard</div>
+        <div style="{{ navTeamsStyleM }}" onClick="{{ goToTeamsM }}">Teams</div>
+        <div style="{{ navCalendarStyleM }}" onClick="{{ goToCalendarM }}">Calendar</div>
+        <div style="{{ navLiveStyleM }}" onClick="{{ goToLiveM }}">Live</div>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="max-width:1320px;margin:0 auto;padding:clamp(14px,4vw,28px);">
+
+    <!-- STANDINGS VIEW -->
+    <sc-if value="{{ isStandings }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-bottom:18px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;">League Standings</div>
+        <div style="font-size:13px;color:oklch(0.68 0.02 250);">Overall (regular season + series)</div>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Overall</div>
+      <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;margin-bottom:32px;">
+        <div style="display:grid;grid-template-columns:44px 1.5fr 56px 56px 56px 56px 64px 56px 56px 64px 72px 80px;min-width:820px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+          <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:44px;z-index:2;background:oklch(0.18 0.02 250);">Team</div><div>GP</div><div>W</div><div>L</div><div>OTL</div><div>PTS</div><div>GF</div><div>GA</div><div>DIFF</div><div>STRK</div><div>L10</div>
+        </div>
+        <sc-for list="{{ playoffTeams }}" as="t" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:44px 1.5fr 56px 56px 56px 56px 64px 56px 56px 64px 72px 80px;min-width:820px;padding:11px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ t.onSelect }}">
+            <div style="font-weight:700;{{ accentText }}position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ t.rank }}</div>
+            <div style="display:flex;align-items:center;gap:10px;position:sticky;left:44px;z-index:1;background:oklch(0.18 0.02 250);">
+              <div style="width:26px;height:26px;border-radius:5px;flex-shrink:0;background:repeating-linear-gradient(45deg, oklch(0.5 0.03 250), oklch(0.5 0.03 250) 3px, oklch(0.22 0.02 250) 3px, oklch(0.22 0.02 250) 6px);"></div>
+              <div style="font-weight:600;">{{ t.name }}</div>
+            </div>
+            <div>{{ t.gp }}</div><div>{{ t.w }}</div><div>{{ t.l }}</div><div>{{ t.otl }}</div>
+            <div style="font-weight:700;">{{ t.pts }}</div>
+            <div>{{ t.gf }}</div><div>{{ t.ga }}</div>
+            <div style="{{ t.diffStyle }}">{{ t.diffLabel }}</div>
+            <div style="{{ t.streakStyle }}">{{ t.streak }}</div>
+            <div style="color:oklch(0.68 0.02 250);">{{ t.last10 }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Regular Season</div>
+      <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;margin-bottom:32px;">
+        <div style="display:grid;grid-template-columns:44px 1.5fr 56px 56px 56px 56px 64px 56px 56px 64px 72px 80px;min-width:820px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+          <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:44px;z-index:2;background:oklch(0.18 0.02 250);">Team</div><div>GP</div><div>W</div><div>L</div><div>OTL</div><div>PTS</div><div>GF</div><div>GA</div><div>DIFF</div><div>STRK</div><div>L10</div>
+        </div>
+        <sc-for list="{{ regularSeasonTeams }}" as="t" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:44px 1.5fr 56px 56px 56px 56px 64px 56px 56px 64px 72px 80px;min-width:820px;padding:11px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ t.onSelect }}">
+            <div style="font-weight:700;{{ accentText }}position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ t.rank }}</div>
+            <div style="display:flex;align-items:center;gap:10px;position:sticky;left:44px;z-index:1;background:oklch(0.18 0.02 250);">
+              <div style="width:26px;height:26px;border-radius:5px;flex-shrink:0;background:repeating-linear-gradient(45deg, oklch(0.5 0.03 250), oklch(0.5 0.03 250) 3px, oklch(0.22 0.02 250) 3px, oklch(0.22 0.02 250) 6px);"></div>
+              <div style="font-weight:600;">{{ t.name }}</div>
+            </div>
+            <div>{{ t.gp }}</div><div>{{ t.w }}</div><div>{{ t.l }}</div><div>{{ t.otl }}</div>
+            <div style="font-weight:700;">{{ t.pts }}</div>
+            <div>{{ t.gf }}</div><div>{{ t.ga }}</div>
+            <div style="{{ t.diffStyle }}">{{ t.diffLabel }}</div>
+            <div style="{{ t.streakStyle }}">{{ t.streak }}</div>
+            <div style="color:oklch(0.68 0.02 250);">{{ t.last10 }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Series</div>
+      <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;">
+        <div style="display:grid;grid-template-columns:44px 1.5fr 60px 56px 56px 56px 60px 60px 70px;min-width:620px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+          <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:44px;z-index:2;background:oklch(0.18 0.02 250);">Team</div><div>SP</div><div>SW</div><div>SL</div><div>PTS</div><div>GW</div><div>GL</div><div>DIFF</div>
+        </div>
+        <sc-for list="{{ seriesTeams }}" as="t" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:44px 1.5fr 60px 56px 56px 56px 60px 60px 70px;min-width:620px;padding:11px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ t.onSelect }}">
+            <div style="font-weight:700;{{ accentText }}position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ t.rank }}</div>
+            <div style="display:flex;align-items:center;gap:10px;position:sticky;left:44px;z-index:1;background:oklch(0.18 0.02 250);">
+              <div style="width:26px;height:26px;border-radius:5px;flex-shrink:0;background:repeating-linear-gradient(45deg, oklch(0.5 0.03 250), oklch(0.5 0.03 250) 3px, oklch(0.22 0.02 250) 3px, oklch(0.22 0.02 250) 6px);"></div>
+              <div style="font-weight:600;">{{ t.name }}</div>
+            </div>
+            <div>{{ t.seriesPlayed }}</div><div>{{ t.seriesW }}</div><div>{{ t.seriesL }}</div>
+            <div style="font-weight:700;">{{ t.seriesPts }}</div>
+            <div>{{ t.seriesGamesW }}</div><div>{{ t.seriesGamesL }}</div>
+            <div style="{{ t.seriesDiffStyle }}">{{ t.seriesDiffLabel }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- LEADERBOARD VIEW -->
+    <sc-if value="{{ isLeaderboard }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-bottom:18px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;">Player Leaderboard</div>
+          <div style="font-size:13px;color:oklch(0.68 0.02 250);">League-wide statistical leaders</div>
+        </div>
+        <div style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;padding-bottom:2px;">
+          <div style="{{ modeRegularStyle }}" onClick="{{ goToModeRegular }}">Regular Season</div>
+          <div style="{{ modeSeriesStyle }}" onClick="{{ goToModeSeries }}">Series</div>
+          <div style="{{ modeBothStyle }}" onClick="{{ goToModeBoth }}">Both</div>
+          <div style="{{ modeStarsStyle }}" onClick="{{ goToModeStars }}">Match Stars</div>
+          <div style="{{ modeGoaliesStyle }}" onClick="{{ goToModeGoalies }}">Goalies</div>
+          <div style="{{ modePenaltiesStyle }}" onClick="{{ goToModePenalties }}">Penalties</div>
+          <div style="{{ modeLegacyStyle }}" onClick="{{ goToModeLegacy }}">Legacy (Since '97)</div>
+        </div>
+      </div>
+
+      <sc-if value="{{ isModeRegular }}" hint-placeholder-val="{{ true }}">
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;">
+          <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 52px 52px 52px 56px 60px 56px 60px;min-width:720px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+            <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:44px;z-index:2;background:oklch(0.18 0.02 250);">Player</div><div>Team</div><div>Pos</div><div>GP</div><div>G</div><div>A</div><div>PTS</div><div>+/-</div><div>PIM</div><div>SOG</div>
+          </div>
+          <sc-for list="{{ skaterLeaders }}" as="p" hint-placeholder-count="15">
+            <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 52px 52px 52px 56px 60px 56px 60px;min-width:720px;padding:10px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ p.onSelect }}">
+              <div style="font-weight:700;{{ accentText }}position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ p.rank }}</div>
+              <div style="font-weight:600;position:sticky;left:44px;z-index:1;background:oklch(0.18 0.02 250);">{{ p.name }}</div>
+              <div style="color:oklch(0.68 0.02 250);">{{ p.teamName }}</div>
+              <div>{{ p.pos }}</div><div>{{ p.gp }}</div><div>{{ p.g }}</div><div>{{ p.a }}</div>
+              <div style="font-weight:700;">{{ p.pts }}</div>
+              <div style="{{ p.plusMinusStyle }}">{{ p.plusMinusLabel }}</div>
+              <div>{{ p.pim }}</div><div>{{ p.sog }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isModeSeries }}" hint-placeholder-val="{{ false }}">
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;">
+          <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 60px 60px 60px 60px;min-width:580px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+            <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:44px;z-index:2;background:oklch(0.18 0.02 250);">Player</div><div>Team</div><div>Pos</div><div>SGP</div><div>SG</div><div>SA</div><div>SPTS</div>
+          </div>
+          <sc-for list="{{ seriesLeaders }}" as="p" hint-placeholder-count="15">
+            <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 60px 60px 60px 60px;min-width:580px;padding:10px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ p.onSelect }}">
+              <div style="font-weight:700;{{ accentText }}position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ p.rank }}</div>
+              <div style="font-weight:600;position:sticky;left:44px;z-index:1;background:oklch(0.18 0.02 250);">{{ p.name }}</div>
+              <div style="color:oklch(0.68 0.02 250);">{{ p.teamName }}</div>
+              <div>{{ p.pos }}</div><div>{{ p.seriesGp }}</div><div>{{ p.seriesG }}</div><div>{{ p.seriesA }}</div>
+              <div style="font-weight:700;">{{ p.seriesPts }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isModeBoth }}" hint-placeholder-val="{{ false }}">
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;">
+          <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 52px 52px 52px 60px;min-width:560px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+            <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:44px;z-index:2;background:oklch(0.18 0.02 250);">Player</div><div>Team</div><div>Pos</div><div>GP</div><div>G</div><div>A</div><div>PTS</div>
+          </div>
+          <sc-for list="{{ bothLeaders }}" as="p" hint-placeholder-count="15">
+            <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 52px 52px 52px 60px;min-width:560px;padding:10px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ p.onSelect }}">
+              <div style="font-weight:700;{{ accentText }}position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ p.rank }}</div>
+              <div style="font-weight:600;position:sticky;left:44px;z-index:1;background:oklch(0.18 0.02 250);">{{ p.name }}</div>
+              <div style="color:oklch(0.68 0.02 250);">{{ p.teamName }}</div>
+              <div>{{ p.pos }}</div><div>{{ p.bothGp }}</div><div>{{ p.bothG }}</div><div>{{ p.bothA }}</div>
+              <div style="font-weight:700;">{{ p.bothPts }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isModeStars }}" hint-placeholder-val="{{ false }}">
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;">
+          <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 56px 70px;min-width:470px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+            <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:44px;z-index:2;background:oklch(0.18 0.02 250);">Player</div><div>Team</div><div>Pos</div><div>GP</div><div>Stars</div>
+          </div>
+          <sc-for list="{{ starLeaders }}" as="p" hint-placeholder-count="15">
+            <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 56px 70px;min-width:470px;padding:10px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ p.onSelect }}">
+              <div style="font-weight:700;{{ accentText }}position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ p.rank }}</div>
+              <div style="font-weight:600;position:sticky;left:44px;z-index:1;background:oklch(0.18 0.02 250);">{{ p.name }}</div>
+              <div style="color:oklch(0.68 0.02 250);">{{ p.teamName }}</div>
+              <div>{{ p.pos }}</div><div>{{ p.gp }}</div>
+              <div style="font-weight:700;">{{ p.starsOfGame }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isModeGoalies }}" hint-placeholder-val="{{ false }}">
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;">
+          <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 52px 52px 52px 72px 72px 56px;min-width:690px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+            <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:44px;z-index:2;background:oklch(0.18 0.02 250);">Player</div><div>Team</div><div>GP</div><div>W</div><div>L</div><div>OTL</div><div>GAA</div><div>SV%</div><div>SO</div>
+          </div>
+          <sc-for list="{{ goalieLeaders }}" as="p" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 52px 52px 52px 72px 72px 56px;min-width:690px;padding:10px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ p.onSelect }}">
+              <div style="font-weight:700;{{ accentText }}position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ p.rank }}</div>
+              <div style="font-weight:600;position:sticky;left:44px;z-index:1;background:oklch(0.18 0.02 250);">{{ p.name }}</div>
+              <div style="color:oklch(0.68 0.02 250);">{{ p.teamName }}</div>
+              <div>{{ p.gp }}</div><div>{{ p.w }}</div><div>{{ p.l }}</div><div>{{ p.otl }}</div>
+              <div style="font-weight:700;">{{ p.gaa }}</div><div>{{ p.svPct }}</div><div>{{ p.so }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isModePenalties }}" hint-placeholder-val="{{ false }}">
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;">
+          <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 56px 70px;min-width:470px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+            <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:44px;z-index:2;background:oklch(0.18 0.02 250);">Player</div><div>Team</div><div>Pos</div><div>GP</div><div>PIM</div>
+          </div>
+          <sc-for list="{{ penaltyLeaders }}" as="p" hint-placeholder-count="15">
+            <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 56px 70px;min-width:470px;padding:10px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ p.onSelect }}">
+              <div style="font-weight:700;{{ accentText }}position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ p.rank }}</div>
+              <div style="font-weight:600;position:sticky;left:44px;z-index:1;background:oklch(0.18 0.02 250);">{{ p.name }}</div>
+              <div style="color:oklch(0.68 0.02 250);">{{ p.teamName }}</div>
+              <div>{{ p.pos }}</div><div>{{ p.gp }}</div>
+              <div style="font-weight:700;">{{ p.pim }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isModeLegacy }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:13px;color:oklch(0.68 0.02 250);margin-bottom:12px;margin-top:-8px;">Founding-era members who have played in the league since 1997–2005</div>
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;">
+          <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 70px 70px 56px 56px;min-width:590px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+            <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:44px;z-index:2;background:oklch(0.18 0.02 250);">Player</div><div>Team</div><div>Pos</div><div>Since</div><div>Years</div><div>GP</div><div>PTS</div>
+          </div>
+          <sc-for list="{{ legacyPlayers }}" as="p" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:44px 1.3fr 1fr 56px 70px 70px 56px 56px;min-width:590px;padding:10px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ p.onSelect }}">
+              <div style="font-weight:700;{{ accentText }}position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ p.rank }}</div>
+              <div style="font-weight:600;position:sticky;left:44px;z-index:1;background:oklch(0.18 0.02 250);">{{ p.name }}</div>
+              <div style="color:oklch(0.68 0.02 250);">{{ p.teamName }}</div>
+              <div>{{ p.pos }}</div><div>{{ p.memberSince }}</div><div>{{ p.yearsInLeague }}</div><div>{{ p.gp }}</div><div style="font-weight:700;">{{ p.ptsOrGaa }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </sc-if>
+
+    <!-- TEAMS VIEW -->
+    <sc-if value="{{ isTeams }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-bottom:18px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;">Teams</div>
+        <div style="font-size:13px;color:oklch(0.68 0.02 250);">8 clubs · Frostline Rec Hockey Association</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;">
+        <sc-for list="{{ allTeams }}" as="t" hint-placeholder-count="8">
+          <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:18px;cursor:pointer;display:flex;flex-direction:column;gap:10px;" onClick="{{ t.onSelect }}">
+            <div style="width:48px;height:48px;border-radius:8px;background:repeating-linear-gradient(45deg, oklch(0.5 0.03 250), oklch(0.5 0.03 250) 4px, oklch(0.22 0.02 250) 4px, oklch(0.22 0.02 250) 8px);"></div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;">{{ t.name }}</div>
+            <div style="font-size:13px;color:oklch(0.68 0.02 250);">Rank #{{ t.rank }} · {{ t.w }}-{{ t.l }}-{{ t.otl }} · {{ t.pts }} PTS</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- LIVE VIEW -->
+    <sc-if value="{{ isLive }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-bottom:18px;display:flex;align-items:center;gap:10px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:oklch(0.65 0.16 25);animation:live-pulse 1.2s ease-in-out infinite;"></div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;">Live Match</div>
+      </div>
+
+      <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:26px;margin-bottom:28px;cursor:pointer;" onClick="{{ liveMatch.onSelect }}">
+        <div style="text-align:center;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:oklch(0.65 0.16 25);font-weight:700;margin-bottom:14px;">{{ liveMatch.period }} · {{ liveMatch.clock }}</div>
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;text-align:right;">{{ liveMatch.teamAName }}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(32px,8vw,52px);font-weight:800;{{ accentText }}">{{ liveMatch.scoreA }} – {{ liveMatch.scoreB }}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;">{{ liveMatch.teamBName }}</div>
+        </div>
+      </div>
+
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Live Stats</div>
+      <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;margin-bottom:28px;">
+        <div style="display:grid;grid-template-columns:1fr 90px 1fr;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+          <div>{{ liveMatch.teamAName }}</div><div style="text-align:center;">Stat</div><div style="text-align:right;">{{ liveMatch.teamBName }}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 90px 1fr;padding:12px 16px;font-size:15px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);">
+          <div style="font-weight:700;">{{ liveMatch.shotsA }}</div><div style="text-align:center;color:oklch(0.68 0.02 250);font-size:12px;letter-spacing:1px;text-transform:uppercase;">Shots</div><div style="font-weight:700;text-align:right;">{{ liveMatch.shotsB }}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 90px 1fr;padding:12px 16px;font-size:15px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);">
+          <div style="font-weight:700;">{{ liveMatch.pimA }}</div><div style="text-align:center;color:oklch(0.68 0.02 250);font-size:12px;letter-spacing:1px;text-transform:uppercase;">PIM</div><div style="font-weight:700;text-align:right;">{{ liveMatch.pimB }}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 90px 1fr;padding:12px 16px;font-size:15px;align-items:center;">
+          <div style="font-weight:700;">{{ liveMatch.ppA }}</div><div style="text-align:center;color:oklch(0.68 0.02 250);font-size:12px;letter-spacing:1px;text-transform:uppercase;">Power Plays</div><div style="font-weight:700;text-align:right;">{{ liveMatch.ppB }}</div>
+        </div>
+      </div>
+
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Standouts So Far</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+        <sc-for list="{{ liveMatch.stars }}" as="s" hint-placeholder-count="2">
+          <div style="{{ highlightCardStyle }}text-align:left;">
+            <div style="{{ highlightLabelStyle }}">Star {{ s.star }}</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;margin-top:4px;">{{ s.name }}</div>
+            <div style="font-size:13px;color:oklch(0.68 0.02 250);margin-top:2px;">{{ s.teamName }} · {{ s.note }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- CALENDAR VIEW -->
+    <sc-if value="{{ isCalendar }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-bottom:18px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;">Calendar</div>
+        <div style="font-size:13px;color:oklch(0.68 0.02 250);">Upcoming fixtures and match history</div>
+      </div>
+
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Upcoming</div>
+      <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;margin-bottom:32px;">
+        <sc-for list="{{ upcomingMatches }}" as="m" hint-placeholder-count="8">
+          <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:12px 16px;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ m.onSelect }}">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="font-size:12px;color:oklch(0.68 0.02 250);">{{ m.date }}</div>
+                <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">{{ m.status }}</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="font-weight:600;font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.teamAName }}</div>
+                <div style="{{ accentText }}font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;flex-shrink:0;">{{ m.resultLabel }}</div>
+                <div style="font-weight:600;font-size:15px;flex:1;min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.teamBName }}</div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isNotMobile }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:90px 1fr auto 1fr 90px;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ m.onSelect }}">
+              <div style="font-size:13px;color:oklch(0.68 0.02 250);">{{ m.date }}</div>
+              <div style="font-weight:600;text-align:right;">{{ m.teamAName }}</div>
+              <div style="{{ accentText }}font-family:'Barlow Condensed',sans-serif;font-weight:700;padding:0 8px;">{{ m.resultLabel }}</div>
+              <div style="font-weight:600;">{{ m.teamBName }}</div>
+              <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);text-align:right;">{{ m.status }}</div>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Results</div>
+      <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;">
+        <sc-for list="{{ pastMatches }}" as="m" hint-placeholder-count="16">
+          <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:12px 16px;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ m.onSelect }}">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="font-size:12px;color:oklch(0.68 0.02 250);">{{ m.date }}</div>
+                <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">{{ m.status }}</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="font-weight:600;font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.teamAName }}</div>
+                <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;flex-shrink:0;">{{ m.resultLabel }}</div>
+                <div style="font-weight:600;font-size:15px;flex:1;min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.teamBName }}</div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isNotMobile }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:90px 1fr auto 1fr 90px;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ m.onSelect }}">
+              <div style="font-size:13px;color:oklch(0.68 0.02 250);">{{ m.date }}</div>
+              <div style="font-weight:600;text-align:right;">{{ m.teamAName }}</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;padding:0 8px;">{{ m.resultLabel }}</div>
+              <div style="font-weight:600;">{{ m.teamBName }}</div>
+              <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);text-align:right;">{{ m.status }}</div>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- MATCH DETAIL VIEW -->
+    <sc-if value="{{ isMatchDetail }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ accentText }}font-size:13px;cursor:pointer;margin-bottom:16px;" onClick="{{ goToCalendar }}">← Back to Calendar</div>
+      <div style="font-size:13px;color:oklch(0.68 0.02 250);margin-bottom:6px;">{{ selectedMatch.date }} · {{ selectedMatch.status }}</div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:clamp(8px,2vw,20px);margin-bottom:26px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;text-align:right;">{{ selectedMatch.teamAName }}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(28px,7vw,44px);font-weight:800;{{ accentText }}">{{ selectedMatch.resultLabel }}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;">{{ selectedMatch.teamBName }}</div>
+      </div>
+
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Score by Period</div>
+      <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;margin-bottom:28px;">
+        <div style="display:grid;grid-template-columns:2fr repeat(3,70px) 70px;min-width:460px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+          <div>Team</div><div>1st</div><div>2nd</div><div>3rd</div><div>Final</div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr repeat(3,70px) 70px;min-width:460px;padding:11px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);">
+          <div style="font-weight:600;">{{ selectedMatch.teamAName }}</div>
+          <sc-for list="{{ selectedMatch.periods }}" as="pd" hint-placeholder-count="3">
+            <div>{{ pd.a }}</div>
+          </sc-for>
+          <div style="font-weight:700;">{{ selectedMatch.scoreA }}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr repeat(3,70px) 70px;min-width:460px;padding:11px 16px;font-size:14px;align-items:center;">
+          <div style="font-weight:600;">{{ selectedMatch.teamBName }}</div>
+          <sc-for list="{{ selectedMatch.periods }}" as="pd" hint-placeholder-count="3">
+            <div>{{ pd.b }}</div>
+          </sc-for>
+          <div style="font-weight:700;">{{ selectedMatch.scoreB }}</div>
+        </div>
+      </div>
+
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Stars of the Game</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;">
+        <sc-for list="{{ selectedMatch.stars }}" as="s" hint-placeholder-count="3">
+          <div style="{{ highlightCardStyle }}text-align:left;">
+            <div style="{{ highlightLabelStyle }}">Star {{ s.star }}</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;margin-top:4px;">{{ s.name }}</div>
+            <div style="font-size:13px;color:oklch(0.68 0.02 250);margin-top:2px;">{{ s.teamName }} · {{ s.note }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- TEAM DETAIL VIEW -->
+    <sc-if value="{{ isTeamDetail }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ accentText }}font-size:13px;cursor:pointer;margin-bottom:16px;" onClick="{{ goToStandings }}">← Back to Standings</div>
+      <div style="display:flex;align-items:center;gap:18px;margin-bottom:22px;flex-wrap:wrap;">
+        <div style="{{ logoGradient }}width:72px;height:72px;border-radius:12px;flex-shrink:0;"></div>
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;line-height:1;">{{ selectedTeam.name }}</div>
+          <div style="font-size:14px;color:oklch(0.68 0.02 250);margin-top:4px;">Rank #{{ selectedTeam.rank }} · {{ selectedTeam.w }}-{{ selectedTeam.l }}-{{ selectedTeam.otl }} · {{ selectedTeam.pts }} PTS</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:24px;">
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:16px;">
+          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">Record</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;margin-top:4px;">{{ selectedTeam.w }}-{{ selectedTeam.l }}-{{ selectedTeam.otl }}</div>
+        </div>
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:16px;">
+          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">Goals For</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;margin-top:4px;">{{ selectedTeam.gf }}</div>
+        </div>
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:16px;">
+          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">Goals Against</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;margin-top:4px;">{{ selectedTeam.ga }}</div>
+        </div>
+        <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:16px;">
+          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">Power Play %</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;margin-top:4px;">{{ selectedTeam.ppPct }}%</div>
+        </div>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Roster</div>
+      <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;margin-bottom:24px;">
+        <div style="display:grid;grid-template-columns:56px 1.4fr 60px 52px 52px 52px 56px 60px;min-width:500px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+          <div style="position:sticky;left:0;z-index:2;background:oklch(0.18 0.02 250);">#</div><div style="position:sticky;left:56px;z-index:2;background:oklch(0.18 0.02 250);">Player</div><div>Pos</div><div>GP</div><div>G</div><div>A</div><div>PTS</div><div>PIM</div>
+        </div>
+        <sc-for list="{{ selectedTeamRoster }}" as="p" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:56px 1.4fr 60px 52px 52px 52px 56px 60px;min-width:500px;padding:10px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);cursor:pointer;" onClick="{{ p.onSelect }}">
+            <div style="color:oklch(0.68 0.02 250);position:sticky;left:0;z-index:1;background:oklch(0.18 0.02 250);">{{ p.number }}</div>
+            <div style="font-weight:600;position:sticky;left:56px;z-index:1;background:oklch(0.18 0.02 250);">{{ p.name }}</div>
+            <div>{{ p.pos }}</div><div>{{ p.gp }}</div><div>{{ p.gOrW }}</div><div>{{ p.aOrL }}</div><div style="font-weight:700;">{{ p.ptsOrGaa }}</div><div>{{ p.pimOrSv }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- PLAYER DETAIL VIEW -->
+    <sc-if value="{{ isPlayerDetail }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ accentText }}font-size:13px;cursor:pointer;margin-bottom:16px;" onClick="{{ goToLeaderboard }}">← Back to Leaderboard</div>
+      <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;flex-wrap:wrap;">
+        <div style="{{ logoGradient }}width:88px;height:88px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;letter-spacing:1px;"></div>
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;line-height:1;">{{ selectedPlayer.name }} <span style="color:oklch(0.68 0.02 250);">#{{ selectedPlayer.number }}</span></div>
+          <div style="font-size:14px;color:oklch(0.68 0.02 250);margin-top:6px;">{{ selectedPlayer.pos }} · {{ selectedPlayer.teamName }} · Age {{ selectedPlayer.age }} · Shoots {{ selectedPlayer.shoots }}</div>
+        </div>
+      </div>
+
+      <sc-if value="{{ isPlayerSkater }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:14px;margin-bottom:24px;">
+          <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">GP</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;">{{ selectedPlayer.gp }}</div></div>
+          <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">Goals</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;">{{ selectedPlayer.g }}</div></div>
+          <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">Assists</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;">{{ selectedPlayer.a }}</div></div>
+          <div style="{{ highlightCardStyle }}"><div style="{{ highlightLabelStyle }}">Points</div><div style="{{ highlightValueStyle }}">{{ selectedPlayer.pts }}</div></div>
+          <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">+/-</div><div style="{{ selectedPlayer.plusMinusStyle }}font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;">{{ selectedPlayer.plusMinusLabel }}</div></div>
+          <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">PIM</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;">{{ selectedPlayer.pim }}</div></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isPlayerGoalie }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px;margin-bottom:24px;">
+          <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">Record</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;">{{ selectedPlayer.w }}-{{ selectedPlayer.l }}-{{ selectedPlayer.otl }}</div></div>
+          <div style="{{ highlightCardStyle }}"><div style="{{ highlightLabelStyle }}">GAA</div><div style="{{ highlightValueStyle }}">{{ selectedPlayer.gaa }}</div></div>
+          <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">SV%</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;">{{ selectedPlayer.svPct }}</div></div>
+          <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">Shutouts</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;">{{ selectedPlayer.so }}</div></div>
+          <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);">GP</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;">{{ selectedPlayer.gp }}</div></div>
+        </div>
+      </sc-if>
+
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px;">Game Log</div>
+      <div style="background:oklch(0.18 0.02 250);border:1px solid oklch(0.27 0.02 250);border-radius:10px;overflow-x:auto;">
+        <div style="display:grid;grid-template-columns:1fr 1.4fr 1fr 52px 52px 52px 56px;min-width:520px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:oklch(0.68 0.02 250);border-bottom:1px solid oklch(0.27 0.02 250);">
+          <div>Date</div><div>Opponent</div><div>Result</div><div>G</div><div>A</div><div>PTS</div><div>+/-</div>
+        </div>
+        <sc-for list="{{ selectedPlayer.gamelog }}" as="g" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:1fr 1.4fr 1fr 52px 52px 52px 56px;min-width:520px;padding:10px 16px;font-size:14px;align-items:center;border-bottom:1px solid oklch(0.23 0.02 250);">
+            <div style="color:oklch(0.68 0.02 250);">{{ g.date }}</div>
+            <div>vs {{ g.opponent }}</div>
+            <div style="{{ g.resultStyle }}">{{ g.result }}</div>
+            <div>{{ g.g }}</div><div>{{ g.a }}</div><div style="font-weight:700;">{{ g.pts }}</div><div style="{{ g.plusMinusStyle }}">{{ g.plusMinusLabel }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#B08A4E&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#5D7C9A&quot;,&quot;#4F8A82&quot;,&quot;#B08A4E&quot;,&quot;#8F6B6B&quot;],&quot;section&quot;:&quot;Theme&quot;}}">
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const TEAM_NAMES = ['Red Storm','Blaxton','Gourmet','Assurancia'];
+const FIRST_NAMES = ['Marcus','Jordan','Tyler','Ethan','Owen','Liam','Noah','Caleb','Dylan','Mason','Aiden','Jake','Corey','Devin','Riley','Blake','Cole','Trevor','Hunter','Shane','Grant','Miles','Reid','Sam','Nico','Wes','Drew','Kai','Theo','Beau','Chase','Rory','Finn','Eli','Zane','Cody','Adam','Sean','Ross','Todd','Gavin','Perry','Micah','Levi','Grady','Rhys','Colt','Dean','Jared','Vince'];
+const LAST_NAMES = ['Bell','Hayes','Carter','Whitfield','Novak','Sullivan','Marsh','Doyle','Kessler','Osei','Petrov','Lindqvist','Moreau','Fitzgerald','Rourke','Vance','Delgado','Strand','Okafor','Blackwood','Ferraro','Higgins','Sorensen','Duval','Castillo','Bergstrom','Nakamura','Whitaker','Kowalski','Reinholt','Abernathy','Sokolov','Larkin','Pruitt','Vasquez','Brennan','Ashworth','Callahan','Winslow','Dunmore'];
+const ROSTER_TEMPLATE = ['C','LW','RW','D','D','G'];
+
+function fmt3(n) { return n.toFixed(3).replace(/^0/, ''); }
+
+function generateData() {
+  const rng = mulberry32(42);
+  let nameIdx = 0;
+  const nextName = () => {
+    const n = FIRST_NAMES[nameIdx % FIRST_NAMES.length] + ' ' + LAST_NAMES[(nameIdx * 7) % LAST_NAMES.length];
+    nameIdx++;
+    return n;
+  };
+
+  const teams = TEAM_NAMES.map((name, i) => {
+    const gp = 20 + Math.round(rng() * 2);
+    const w = 4 + Math.round(rng() * 13);
+    const l = Math.max(0, Math.round(rng() * (gp - w)));
+    const otl = Math.max(0, gp - w - l);
+    const pts = w * 2 + otl;
+    const gf = Math.round(58 + rng() * 42);
+    const ga = Math.round(48 + rng() * 42);
+    const streakLen = 1 + Math.round(rng() * 5);
+    const streakWin = rng() > 0.45;
+    const l10w = Math.min(10, Math.round(rng() * 8) + 2);
+    const l10l = 10 - l10w;
+    const seriesPlayed = 2 + Math.round(rng() * 3);
+    const seriesW = Math.round(rng() * seriesPlayed);
+    const seriesL = seriesPlayed - seriesW;
+    const seriesGamesW = seriesW * 2 + Math.round(rng() * seriesL);
+    const seriesGamesL = seriesL * 2 + Math.round(rng() * seriesW);
+    const seriesGf = seriesGamesW * 3 + Math.round(rng() * 6);
+    const seriesGa = seriesGamesL * 3 + Math.round(rng() * 6);
+    return { id: 't' + i, name, gp, w, l, otl, pts, gf, ga, ppPct: (14 + Math.round(rng() * 16)),
+      streak: (streakWin ? 'W' : 'L') + streakLen, streakWin, last10: l10w + '-' + l10l,
+      seriesPlayed, seriesW, seriesL, seriesPts: seriesW * 2, seriesGamesW, seriesGamesL, seriesGf, seriesGa };
+  });
+
+  const allPlayers = [];
+  teams.forEach((team) => {
+    ROSTER_TEMPLATE.forEach((pos) => {
+      const id = 'p' + allPlayers.length;
+      const name = nextName();
+      const number = 2 + Math.round(rng() * 95);
+      const age = 19 + Math.round(rng() * 26);
+      const shoots = rng() > 0.5 ? 'L' : 'R';
+      if (pos !== 'G') {
+        const gp = 16 + Math.round(rng() * 6);
+        const g = Math.round(rng() * 24);
+        const a = Math.round(rng() * 26);
+        const pts = g + a;
+        const plusMinus = Math.round(rng() * 24) - 10;
+        const pim = Math.round(rng() * 34);
+        const sog = g * 2 + Math.round(rng() * 22) + 6;
+        const seriesGp = 2 + Math.round(rng() * 4);
+        const seriesG = Math.round(rng() * 8);
+        const seriesA = Math.round(rng() * 9);
+        const seriesPts = seriesG + seriesA;
+        const seriesPim = Math.round(rng() * 12);
+        const starsOfGame = Math.round(rng() * rng() * 13);
+        const memberSince = 1997 + Math.round(rng() * 22);
+        const bothGp = gp + seriesGp;
+        const bothG = g + seriesG;
+        const bothA = a + seriesA;
+        const bothPts = pts + seriesPts;
+        const bothPim = pim + seriesPim;
+        const gamelog = Array.from({ length: 6 }).map((_, gi) => {
+          const opp = TEAM_NAMES[(TEAM_NAMES.indexOf(team.name) + gi + 1) % TEAM_NAMES.length];
+          const gg = Math.round(rng() * 3);
+          const ga2 = Math.round(rng() * 3);
+          const win = rng() > 0.45;
+          const pm = Math.round(rng() * 6) - 3;
+          return { date: `Jan ${6 + gi * 4}`, opponent: opp, result: win ? 'W' : 'L',
+            resultStyle: win ? 'color:oklch(0.7 0.14 150);font-weight:700;' : 'color:oklch(0.65 0.16 25);font-weight:700;',
+            g: gg, a: ga2, pts: gg + ga2, plusMinusLabel: pm >= 0 ? '+' + pm : String(pm),
+            plusMinusStyle: pm >= 0 ? 'color:oklch(0.7 0.14 150);' : 'color:oklch(0.65 0.16 25);' };
+        });
+        allPlayers.push({ id, name, number, pos, teamId: team.id, teamName: team.name, age, shoots,
+          gp, g, a, pts, plusMinus, pim, sog,
+          seriesGp, seriesG, seriesA, seriesPts, seriesPim,
+          bothGp, bothG, bothA, bothPts, bothPim,
+          starsOfGame, memberSince, yearsInLeague: 2026 - memberSince,
+          plusMinusLabel: plusMinus >= 0 ? '+' + plusMinus : String(plusMinus),
+          plusMinusStyle: plusMinus >= 0 ? 'color:oklch(0.7 0.14 150);' : 'color:oklch(0.65 0.16 25);',
+          gOrW: g, aOrL: a, ptsOrGaa: pts, pimOrSv: pim,
+          gamelog, isGoalie: false });
+      } else {
+        const gp = 10 + Math.round(rng() * 10);
+        const w = Math.round(rng() * gp * 0.55);
+        const l = Math.max(0, Math.round(rng() * (gp - w)));
+        const otl = Math.max(0, gp - w - l);
+        const gaa = 1.75 + rng() * 1.7;
+        const svPct = 0.895 + rng() * 0.03;
+        const so = Math.round(rng() * 4);
+        const gamelog = Array.from({ length: 6 }).map((_, gi) => {
+          const opp = TEAM_NAMES[(TEAM_NAMES.indexOf(team.name) + gi + 1) % TEAM_NAMES.length];
+          const win = rng() > 0.45;
+          return { date: `Jan ${6 + gi * 4}`, opponent: opp, result: win ? 'W' : 'L',
+            resultStyle: win ? 'color:oklch(0.7 0.14 150);font-weight:700;' : 'color:oklch(0.65 0.16 25);font-weight:700;',
+            g: 0, a: 0, pts: 0, plusMinusLabel: '–', plusMinusStyle: 'color:oklch(0.68 0.02 250);' };
+        });
+        allPlayers.push({ id, name, number, pos, teamId: team.id, teamName: team.name, age, shoots,
+          gp, w, l, otl, gaa: gaa.toFixed(2), svPct: fmt3(svPct), so,
+          gOrW: w, aOrL: l, ptsOrGaa: gaa.toFixed(2), pimOrSv: fmt3(svPct),
+          gamelog, isGoalie: true });
+      }
+    });
+  });
+
+  const diffStyle = (v) => v >= 0 ? 'color:oklch(0.7 0.14 150);font-weight:600;' : 'color:oklch(0.65 0.16 25);font-weight:600;';
+  const diffLabel = (v) => v >= 0 ? '+' + v : String(v);
+
+  const combinedTeams = teams.map(t => ({
+    ...t,
+    combinedGp: t.gp + t.seriesGamesW + t.seriesGamesL,
+    combinedW: t.w + t.seriesGamesW,
+    combinedL: t.l + t.seriesGamesL,
+    combinedPts: t.pts + t.seriesPts,
+    combinedGf: t.gf + t.seriesGf,
+    combinedGa: t.ga + t.seriesGa,
+  }));
+
+  const sortedTeams = [...combinedTeams].sort((a, b) => b.combinedPts - a.combinedPts).map((t, i) => ({
+    ...t, rank: i + 1,
+    gp: t.combinedGp, w: t.combinedW, l: t.combinedL, pts: t.combinedPts, gf: t.combinedGf, ga: t.combinedGa,
+    diffLabel: diffLabel(t.combinedGf - t.combinedGa),
+    diffStyle: diffStyle(t.combinedGf - t.combinedGa),
+    streakStyle: t.streakWin ? 'color:oklch(0.7 0.14 150);font-weight:600;' : 'color:oklch(0.65 0.16 25);font-weight:600;',
+  }));
+
+  const regularSeasonTeams = [...teams].sort((a, b) => b.pts - a.pts).map((t, i) => ({
+    ...t, rank: i + 1,
+    diffLabel: diffLabel(t.gf - t.ga),
+    diffStyle: diffStyle(t.gf - t.ga),
+    streakStyle: t.streakWin ? 'color:oklch(0.7 0.14 150);font-weight:600;' : 'color:oklch(0.65 0.16 25);font-weight:600;',
+  }));
+
+  const seriesTeams = [...teams].sort((a, b) => b.seriesPts - a.seriesPts).map((t, i) => ({
+    ...t, rank: i + 1,
+    seriesDiffLabel: diffLabel(t.seriesGf - t.seriesGa),
+    seriesDiffStyle: diffStyle(t.seriesGf - t.seriesGa),
+  }));
+
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr'];
+  const MONTH_DAYS = [31, 28, 31, 30];
+  const dateAt = (dayOffset) => {
+    let d = 4 + dayOffset;
+    let m = 0;
+    while (d > MONTH_DAYS[m]) { d -= MONTH_DAYS[m]; m++; }
+    return `${MONTHS[m]} ${d}`;
+  };
+
+  const matches = Array.from({ length: 24 }).map((_, i) => {
+    const teamA = teams[i % teams.length];
+    const teamB = teams[(i + 3 + Math.floor(i / teams.length)) % teams.length];
+    const played = i < 16;
+    const scoreA = played ? Math.round(1 + rng() * 5) : null;
+    const scoreB = played ? Math.round(1 + rng() * 5) : null;
+    const roster = allPlayers.filter(p => (p.teamId === teamA.id || p.teamId === teamB.id) && !p.isGoalie);
+    const picks = [...roster].sort(() => rng() - 0.5).slice(0, 3);
+    const stars = played ? picks.map((p, si) => ({
+      star: si + 1, playerId: p.id, name: p.name, teamName: p.teamName,
+      note: `${Math.round(rng() * 2)}G ${Math.round(rng() * 2)}A`,
+    })) : [];
+    const p1a = played ? Math.round(rng() * scoreA) : 0, p1b = played ? Math.round(rng() * scoreB) : 0;
+    const p2a = played ? Math.round(rng() * (scoreA - p1a)) : 0, p2b = played ? Math.round(rng() * (scoreB - p1b)) : 0;
+    const p3a = played ? Math.max(0, scoreA - p1a - p2a) : 0, p3b = played ? Math.max(0, scoreB - p1b - p2b) : 0;
+    return {
+      id: 'm' + i, date: dateAt(i * 3), teamAId: teamA.id, teamBId: teamB.id,
+      teamAName: teamA.name, teamBName: teamB.name, played,
+      status: played ? 'Final' : 'Upcoming', scoreA, scoreB,
+      resultLabel: played ? `${scoreA} – ${scoreB}` : 'vs',
+      periods: played ? [{ label: '1st', a: p1a, b: p1b }, { label: '2nd', a: p2a, b: p2b }, { label: '3rd', a: p3a, b: p3b }] : [],
+      stars,
+    };
+  });
+
+  const liveMatch = matches[15];
+  liveMatch.status = 'Live';
+  liveMatch.isLive = true;
+  liveMatch.period = '2nd Period';
+  liveMatch.clock = '11:42';
+  liveMatch.shotsA = 6 + Math.round(rng() * 10);
+  liveMatch.shotsB = 6 + Math.round(rng() * 10);
+  liveMatch.pimA = Math.round(rng() * 8);
+  liveMatch.pimB = Math.round(rng() * 8);
+  liveMatch.ppA = Math.round(rng() * 3);
+  liveMatch.ppB = Math.round(rng() * 3);
+  liveMatch.stars = liveMatch.stars.slice(0, 2);
+
+  const skaters = allPlayers.filter(p => !p.isGoalie);
+  const rank = (arr) => arr.map((p, i) => ({ ...p, rank: i + 1 }));
+  const skaterLeaders = rank([...skaters].sort((a, b) => b.pts - a.pts).slice(0, 15));
+  const seriesLeaders = rank([...skaters].sort((a, b) => b.seriesPts - a.seriesPts).slice(0, 15));
+  const bothLeaders = rank([...skaters].sort((a, b) => b.bothPts - a.bothPts).slice(0, 15));
+  const starLeaders = rank([...skaters].sort((a, b) => b.starsOfGame - a.starsOfGame).slice(0, 15));
+  const penaltyLeaders = rank([...skaters].sort((a, b) => b.pim - a.pim).slice(0, 15));
+  const goalieLeaders = rank(allPlayers.filter(p => p.isGoalie).sort((a, b) => parseFloat(a.gaa) - parseFloat(b.gaa)).slice(0, 8));
+  const legacyPlayers = rank(allPlayers.filter(p => p.memberSince <= 2005).sort((a, b) => a.memberSince - b.memberSince));
+
+  return { teams: sortedTeams, regularSeasonTeams, seriesTeams, allPlayers, matches, liveMatch,
+    skaterLeaders, seriesLeaders, bothLeaders, starLeaders, penaltyLeaders, goalieLeaders, legacyPlayers };
+}
+
+const TAB_BASE = 'padding:8px 16px;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:600;border-radius:6px;cursor:pointer;letter-spacing:0.3px;white-space:nowrap;flex-shrink:0;';
+const TAB_INACTIVE = TAB_BASE + 'color:oklch(0.75 0.02 250);';
+const TAB_BASE_M = 'padding:12px 16px;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:600;border-radius:8px;cursor:pointer;letter-spacing:0.3px;min-height:44px;display:flex;align-items:center;';
+const TAB_INACTIVE_M = TAB_BASE_M + 'color:oklch(0.75 0.02 250);';
+const MODE_BASE = 'padding:9px 14px;font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid oklch(0.3 0.02 250);white-space:nowrap;flex-shrink:0;min-height:24px;';
+const MODE_INACTIVE = MODE_BASE + 'color:oklch(0.75 0.02 250);';
+const DEFAULT_ACCENT = '#5D7C9A';
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.data = generateData();
+    this.state = {
+      view: 'standings',
+      leaderboardMode: 'regular',
+      selectedTeamId: this.data.teams[0].id,
+      selectedPlayerId: this.data.skaterLeaders[0].id,
+      selectedMatchId: this.data.matches[0].id,
+      isMobile: typeof window !== 'undefined' ? window.innerWidth < 720 : false,
+      mobileNavOpen: false,
+    };
+  }
+
+  componentDidMount() {
+    this._onResize = () => {
+      const m = window.innerWidth < 720;
+      if (m !== this.state.isMobile) this.setState({ isMobile: m, mobileNavOpen: m ? this.state.mobileNavOpen : false });
+    };
+    window.addEventListener('resize', this._onResize);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._onResize);
+  }
+
+  renderVals() {
+    const { teams, regularSeasonTeams, seriesTeams, allPlayers, matches, liveMatch, skaterLeaders, seriesLeaders, bothLeaders, starLeaders, penaltyLeaders, goalieLeaders, legacyPlayers } = this.data;
+    const view = this.state.view;
+    const mode = this.state.leaderboardMode;
+    const selectedTeam = teams.find(t => t.id === this.state.selectedTeamId) || teams[0];
+    const selectedPlayer = allPlayers.find(p => p.id === this.state.selectedPlayerId) || allPlayers[0];
+    const selectedMatch = matches.find(m => m.id === this.state.selectedMatchId) || matches[0];
+    const selectMatch = (id) => this.setState({ selectedMatchId: id, view: 'match' });
+    const withMatchSelect = (arr) => arr.map(m => ({ ...m, onSelect: () => selectMatch(m.id) }));
+    const accent = this.props.accentColor ?? DEFAULT_ACCENT;
+    const accentText = `color:${accent};`;
+    const tabActive = TAB_BASE + `background:${accent};color:#12181e;`;
+    const tabActiveM = TAB_BASE_M + `background:${accent};color:#12181e;`;
+    const modeActive = MODE_BASE + `background:${accent};color:#12181e;border-color:${accent};`;
+    const closeMobileNav = (v) => { this.setState({ view: v, mobileNavOpen: false }); };
+    const highlightCardStyle = `background:color-mix(in srgb, ${accent} 16%, oklch(0.18 0.02 250));border:1px solid color-mix(in srgb, ${accent} 45%, oklch(0.27 0.02 250));border-radius:10px;padding:14px;text-align:center;`;
+    const highlightLabelStyle = `font-size:11px;letter-spacing:1px;text-transform:uppercase;color:color-mix(in srgb, ${accent} 75%, white);`;
+    const highlightValueStyle = `font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:color-mix(in srgb, ${accent} 85%, white);`;
+    const logoGradient = `background:repeating-linear-gradient(45deg, ${accent}, ${accent} 4px, color-mix(in srgb, ${accent} 25%, black) 4px, color-mix(in srgb, ${accent} 25%, black) 8px);`;
+    const selectTeam = (id) => this.setState({ selectedTeamId: id, view: 'team' });
+    const selectPlayer = (id) => this.setState({ selectedPlayerId: id, view: 'player' });
+    const withTeamSelect = (arr) => arr.map(t => ({ ...t, onSelect: () => selectTeam(t.id) }));
+    const withPlayerSelect = (arr) => arr.map(p => ({ ...p, onSelect: () => selectPlayer(p.id) }));
+
+    return {
+      isStandings: view === 'standings',
+      isLeaderboard: view === 'leaderboard',
+      isTeams: view === 'teams',
+      isCalendar: view === 'calendar',
+      isLive: view === 'live',
+      isMatchDetail: view === 'match',
+      isTeamDetail: view === 'team',
+      isPlayerDetail: view === 'player',
+      isModeRegular: mode === 'regular',
+      isModeSeries: mode === 'series',
+      isModeBoth: mode === 'both',
+      isModeStars: mode === 'stars',
+      isModeGoalies: mode === 'goalies',
+      isModePenalties: mode === 'penalties',
+      isModeLegacy: mode === 'legacy',
+      isPlayerSkater: !selectedPlayer.isGoalie,
+      isPlayerGoalie: !!selectedPlayer.isGoalie,
+      navStandingsStyle: view === 'standings' || view === 'team' ? tabActive : TAB_INACTIVE,
+      navLeaderboardStyle: view === 'leaderboard' || view === 'player' ? tabActive : TAB_INACTIVE,
+      navTeamsStyle: view === 'teams' ? tabActive : TAB_INACTIVE,
+      navCalendarStyle: view === 'calendar' || view === 'match' ? tabActive : TAB_INACTIVE,
+      navLiveStyle: view === 'live' ? tabActive : TAB_INACTIVE,
+      isMobile: this.state.isMobile,
+      isNotMobile: !this.state.isMobile,
+      isMobileNavOpen: this.state.isMobile && this.state.mobileNavOpen,
+      toggleMobileNav: () => this.setState({ mobileNavOpen: !this.state.mobileNavOpen }),
+      navStandingsStyleM: (view === 'standings' || view === 'team') ? tabActiveM : TAB_INACTIVE_M,
+      navLeaderboardStyleM: (view === 'leaderboard' || view === 'player') ? tabActiveM : TAB_INACTIVE_M,
+      navTeamsStyleM: view === 'teams' ? tabActiveM : TAB_INACTIVE_M,
+      navCalendarStyleM: (view === 'calendar' || view === 'match') ? tabActiveM : TAB_INACTIVE_M,
+      navLiveStyleM: view === 'live' ? tabActiveM : TAB_INACTIVE_M,
+      goToStandingsM: () => closeMobileNav('standings'),
+      goToLeaderboardM: () => closeMobileNav('leaderboard'),
+      goToTeamsM: () => closeMobileNav('teams'),
+      goToCalendarM: () => closeMobileNav('calendar'),
+      goToLiveM: () => closeMobileNav('live'),
+      liveMatch: { ...liveMatch, onSelect: () => selectMatch(liveMatch.id) },
+      goToLive: () => this.setState({ view: 'live' }),
+      upcomingMatches: withMatchSelect(matches.filter(m => !m.played)),
+      pastMatches: withMatchSelect([...matches.filter(m => m.played)].reverse()),
+      selectedMatch,
+      goToCalendar: () => this.setState({ view: 'calendar' }),
+      modeRegularStyle: mode === 'regular' ? modeActive : MODE_INACTIVE,
+      modeSeriesStyle: mode === 'series' ? modeActive : MODE_INACTIVE,
+      modeBothStyle: mode === 'both' ? modeActive : MODE_INACTIVE,
+      modeStarsStyle: mode === 'stars' ? modeActive : MODE_INACTIVE,
+      modeGoaliesStyle: mode === 'goalies' ? modeActive : MODE_INACTIVE,
+      modePenaltiesStyle: mode === 'penalties' ? modeActive : MODE_INACTIVE,
+      modeLegacyStyle: mode === 'legacy' ? modeActive : MODE_INACTIVE,
+      seriesLeaders: withPlayerSelect(seriesLeaders),
+      bothLeaders: withPlayerSelect(bothLeaders),
+      starLeaders: withPlayerSelect(starLeaders),
+      penaltyLeaders: withPlayerSelect(penaltyLeaders),
+      legacyPlayers: withPlayerSelect(legacyPlayers),
+      accentText, highlightCardStyle, highlightLabelStyle, highlightValueStyle, logoGradient,
+      playoffTeams: withTeamSelect(teams),
+      bubbleTeams: [],
+      allTeams: withTeamSelect(teams),
+      regularSeasonTeams: withTeamSelect(regularSeasonTeams),
+      seriesTeams: withTeamSelect(seriesTeams),
+      skaterLeaders: withPlayerSelect(skaterLeaders),
+      goalieLeaders: withPlayerSelect(goalieLeaders),
+      selectedTeam,
+      selectedTeamRoster: withPlayerSelect(allPlayers.filter(p => p.teamId === selectedTeam.id)),
+      selectedPlayer,
+      goToStandings: () => this.setState({ view: 'standings' }),
+      goToLeaderboard: () => this.setState({ view: 'leaderboard' }),
+      goToTeams: () => this.setState({ view: 'teams' }),
+      goToModeRegular: () => this.setState({ leaderboardMode: 'regular' }),
+      goToModeSeries: () => this.setState({ leaderboardMode: 'series' }),
+      goToModeBoth: () => this.setState({ leaderboardMode: 'both' }),
+      goToModeStars: () => this.setState({ leaderboardMode: 'stars' }),
+      goToModeGoalies: () => this.setState({ leaderboardMode: 'goalies' }),
+      goToModePenalties: () => this.setState({ leaderboardMode: 'penalties' }),
+      goToModeLegacy: () => this.setState({ leaderboardMode: 'legacy' }),
+    };
+  }
+}
+</script>
+</body>
+</html>
