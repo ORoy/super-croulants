@@ -3,6 +3,8 @@ import Header from "./components/Header";
 import Leaderboard from "./components/Leaderboard";
 import Calendar from "./components/Calendar";
 import Standings from "./components/Standings";
+import Teams from "./components/Teams";
+import TeamDetail from "./components/TeamDetail";
 import { colors } from "./theme/tokens";
 
 export default function App() {
@@ -21,7 +23,8 @@ export default function App() {
           <Routes>
             <Route path="/standings" element={<Standings />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/teams" element={<div>Teams — TODO</div>} />
+            <Route path="/teams" element={<Teams />} />
+            <Route path="/teams/:teamId" element={<TeamDetail />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/players/*" element={<Navigate to="/leaderboard" replace />} />
             <Route path="*" element={<Navigate to="/leaderboard" replace />} />
