@@ -163,7 +163,7 @@ export default function TeamDetail() {
       {roster.length === 0 ? (
         <div style={{ color: colors.mutedText }}>Aucun joueur trouvé pour cette équipe.</div>
       ) : (
-        <StatTable columns={ROSTER_COLUMNS} rows={roster} />
+        <StatTable key={decodedTeamId} columns={ROSTER_COLUMNS} rows={roster} />
       )}
     </div>
   );

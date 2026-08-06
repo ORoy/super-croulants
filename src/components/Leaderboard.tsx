@@ -220,6 +220,7 @@ export default function Leaderboard() {
 
       {!loading && !error && rows.length > 0 && (
         <StatTable
+          key={activeMode.sheetLabel}
           columns={activeMode.columns}
           rows={rows}
           onRowClick={row => {

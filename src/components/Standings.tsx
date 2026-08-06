@@ -1,9 +1,10 @@
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSheetRawData } from "../hooks/useSheetData";
 import { SHEET_NAMES, calendarTabs } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { STANDINGS_RANGE, SECTION_TITLES, parseStandingsSection, type TeamStanding } from "../utils/standings";
+import { compareSortValues, type SortDirection } from "../utils/sortValues";
 
 // --- Streak / last-10 derivation from the Calendar's Matchs data ---------
 // That sheet has no streak/record column, so we replicate the game-log
@@ -124,6 +125,8 @@ interface ColumnDef {
   width: string;
   sticky?: number;
   render: (team: DisplayTeam) => ReactNode;
+  /** Plain comparable value for sorting; omit to make the column non-sortable. */
+  sortValue?: (team: DisplayTeam) => string | number;
 }
 
 const diffLabel = (value: number) => (value >= 0 ? `+${value}` : `${value}`);
@@ -135,6 +138,7 @@ const RANK_COL: ColumnDef = {
   width: "44px",
   sticky: 0,
   render: t => t.rank,
+  sortValue: t => Number(t.rank),
 };
 
 const TEAM_COL: ColumnDef = {
@@ -142,6 +146,7 @@ const TEAM_COL: ColumnDef = {
   label: "Team",
   width: "1.5fr",
   sticky: 44,
+  sortValue: t => t.team,
   render: t => (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
       <div
@@ -160,13 +165,19 @@ const TEAM_COL: ColumnDef = {
 };
 
 const RECORD_COLUMNS: ColumnDef[] = [
-  { key: "gp", label: "GP", width: "56px", render: t => t.gp },
-  { key: "w", label: "W", width: "56px", render: t => t.w },
-  { key: "l", label: "L", width: "56px", render: t => t.l },
-  { key: "otl", label: "OTL", width: "56px", render: t => t.otl },
-  { key: "pts", label: "PTS", width: "64px", render: t => <strong>{t.pts}</strong> },
-  { key: "gf", label: "GF", width: "56px", render: t => t.gf },
-  { key: "ga", label: "GA", width: "56px", render: t => t.ga },
+  { key: "gp", label: "GP", width: "56px", render: t => t.gp, sortValue: t => t.gp },
+  { key: "w", label: "W", width: "56px", render: t => t.w, sortValue: t => t.w },
+  { key: "l", label: "L", width: "56px", render: t => t.l, sortValue: t => t.l },
+  { key: "otl", label: "OTL", width: "56px", render: t => t.otl, sortValue: t => t.otl },
+  {
+    key: "pts",
+    label: "PTS",
+    width: "64px",
+    render: t => <strong>{t.pts}</strong>,
+    sortValue: t => t.pts,
+  },
+  { key: "gf", label: "GF", width: "56px", render: t => t.gf, sortValue: t => t.gf },
+  { key: "ga", label: "GA", width: "56px", render: t => t.ga, sortValue: t => t.ga },
   {
     key: "diff",
     label: "DIFF",
@@ -174,6 +185,7 @@ const RECORD_COLUMNS: ColumnDef[] = [
     render: t => (
       <span style={{ color: diffColor(t.diff), fontWeight: 600 }}>{diffLabel(t.diff)}</span>
     ),
+    sortValue: t => t.diff,
   },
 ];
 
@@ -206,6 +218,11 @@ const stickyStyle = (sticky: number | undefined): CSSProperties =>
         background: colors.cardBackground,
       };
 
+interface SortState {
+  key: string;
+  direction: SortDirection;
+}
+
 function StandingsSection({
   title,
   columns,
@@ -216,11 +233,34 @@ function StandingsSection({
   teams: DisplayTeam[];
 }) {
   const navigate = useNavigate();
+  const [sortState, setSortState] = useState<SortState | null>(null);
   const gridTemplateColumns = columns.map(c => c.width).join(" ");
   const minWidth = columns.reduce(
     (sum, c) => sum + (c.width.endsWith("fr") ? 180 : parseInt(c.width, 10)),
     0
   );
+
+  const handleHeaderClick = (column: ColumnDef, index: number) => {
+    if (!column.sortValue) return;
+    setSortState(prev => {
+      if (prev?.key === column.key) {
+        return { key: column.key, direction: prev.direction === "asc" ? "desc" : "asc" };
+      }
+      const sample = teams.length > 0 ? column.sortValue!(teams[0]) : "";
+      const direction: SortDirection = index === 0 || typeof sample !== "number" ? "asc" : "desc";
+      return { key: column.key, direction };
+    });
+  };
+
+  const sortedTeams = useMemo(() => {
+    if (!sortState) return teams;
+    const column = columns.find(c => c.key === sortState.key);
+    if (!column?.sortValue) return teams;
+    const { direction } = sortState;
+    return [...teams].sort((a, b) =>
+      compareSortValues(column.sortValue!(a), column.sortValue!(b), direction)
+    );
+  }, [teams, columns, sortState]);
 
   return (
     <div style={{ marginBottom: 32 }}>
@@ -256,13 +296,23 @@ function StandingsSection({
             borderBottom: `1px solid ${colors.border}`,
           }}
         >
-          {columns.map(col => (
-            <div key={col.key} style={stickyStyle(col.sticky)}>
+          {columns.map((col, index) => (
+            <div
+              key={col.key}
+              onClick={() => handleHeaderClick(col, index)}
+              style={{ ...stickyStyle(col.sticky), cursor: col.sortValue ? "pointer" : undefined }}
+            >
               {col.label}
+              {sortState?.key === col.key && (
+                <span style={{ color: colors.accent }}>
+                  {" "}
+                  {sortState.direction === "asc" ? "▲" : "▼"}
+                </span>
+              )}
             </div>
           ))}
         </div>
-        {teams.map(team => (
+        {sortedTeams.map(team => (
           <div
             key={team.team}
             onClick={() => navigate(`/teams/${encodeURIComponent(team.team)}`)}
