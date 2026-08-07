@@ -162,7 +162,10 @@ export default function Leaderboard() {
     playerTabs.find(tab => tab.label === activeMode.sheetLabel) ?? { range: "" }
   );
 
-  const rows = useMemo(() => data.map(normalizeRow), [data]);
+  const rows = useMemo(
+    () => data.map(normalizeRow).filter(row => (row[activeMode.nameKey] ?? "").trim() !== ""),
+    [data, activeMode.nameKey]
+  );
 
   return (
     <div>
