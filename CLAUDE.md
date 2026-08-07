@@ -16,6 +16,10 @@ React + TS + Vite SPA, hockey league stats (players/teams/calendar), deployed to
 
 Uses `HashRouter` (GitHub Pages has no server routing). Requires `VITE_GOOGLE_SHEETS_API_KEY` in `.env.local`.
 
+## Design
+
+Visual design source of truth: Claude Design project "Hockey ranking website design" (https://claude.ai/design/p/5e493ac1-2d3d-43ec-902b-84c5dc128c58) — files `Hockey Rankings.dc.html` (full UI mockup) and `Super Croulant Logo.dc.html` (logo lockups). Check it before changing colors, logo, or layout. Current theme (`src/theme/tokens.ts` `colors.accent`, `Header.tsx` logo) matches it as of 2026-08-06.
+
 ## Architecture
 
 - No backend. Data comes live from one hardcoded Google Sheet (`src/utils/sheetFetch.ts`), via `fetchSheetData` (headers = first row) or `fetchSheetRawData` (raw rows, for custom parsing like `Calendar.tsx`).
