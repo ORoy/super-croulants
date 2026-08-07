@@ -86,7 +86,17 @@ export default function Header() {
           gap: "clamp(10px,2vw,28px)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flex: 1,
+            minWidth: 0,
+            cursor: "pointer",
+          }}
+          onClick={() => handleNavigate("/leaderboard")}
+        >
           <div style={logoStyle} />
           <div style={{ minWidth: 0 }}>
             <div
@@ -111,7 +121,7 @@ export default function Header() {
                 textTransform: "uppercase",
               }}
             >
-              Rec Hockey League
+              Ils sont supers et croulants
             </div>
           </div>
         </div>

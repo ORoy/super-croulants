@@ -80,12 +80,13 @@ export default function StatTable({ columns, rows, stickyColumnCount = 2, onRowC
 
   const minWidth = RANK_COLUMN_WIDTH + Math.max(columns.length - 1, 0) * 100 + 60;
 
-  const stickyCellStyle = (index: number): CSSProperties =>
+  const stickyCellStyle = (index: number, zIndex: number): CSSProperties =>
     index < stickyCount
       ? {
           position: "sticky",
           left: index === 0 ? 0 : RANK_COLUMN_WIDTH,
-          zIndex: 1,
+          zIndex,
+          transform: "translateZ(0)",
         }
       : {};
 
@@ -96,6 +97,7 @@ export default function StatTable({ columns, rows, stickyColumnCount = 2, onRowC
         border: `1px solid ${colors.border}`,
         borderRadius: 10,
         overflow: "auto",
+        WebkitOverflowScrolling: "touch",
         maxHeight: MAX_BODY_HEIGHT,
       }}
     >
@@ -113,7 +115,7 @@ export default function StatTable({ columns, rows, stickyColumnCount = 2, onRowC
               onClick={() => toggleSort(column.key, index, isNumericColumn(rows, column.key))}
               style={{
                 ...headerCellStyle,
-                ...stickyCellStyle(index),
+                ...stickyCellStyle(index, 4),
                 padding: "10px 16px",
                 cursor: "pointer",
               }}
@@ -145,7 +147,7 @@ export default function StatTable({ columns, rows, stickyColumnCount = 2, onRowC
               <div
                 key={column.key}
                 style={{
-                  ...stickyCellStyle(index),
+                  ...stickyCellStyle(index, 1),
                   background: colors.cardBackground,
                   padding: "10px 16px",
                   display: "flex",
