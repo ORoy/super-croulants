@@ -4,10 +4,10 @@ import { colors } from "../theme/tokens";
 import { useIsMobile } from "../hooks/useIsMobile";
 
 const NAV_ITEMS = [
-  { label: "Standings", path: "/standings" },
-  { label: "Leaderboard", path: "/leaderboard" },
-  { label: "Teams", path: "/teams" },
-  { label: "Calendar", path: "/calendar" },
+  { label: "Classement", path: "/standings" },
+  { label: "Joueurs", path: "/leaderboard" },
+  { label: "Équipes", path: "/teams" },
+  { label: "Calendrier", path: "/calendar" },
 ];
 
 const TAB_BASE: CSSProperties = {
@@ -188,7 +188,7 @@ export default function Header() {
                 flexShrink: 0,
               }}
             >
-              2025–26 Season
+              Saison 2025–26
             </div>
           </>
         )}
