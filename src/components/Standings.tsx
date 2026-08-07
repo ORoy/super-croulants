@@ -7,6 +7,8 @@ import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils
 import { extractGameLogs, withStreaks, type DisplayTeam } from "../utils/standingsStreaks";
 import { compareSortValues } from "../utils/sortValues";
 import { useColumnSort } from "../hooks/useColumnSort";
+import { useTeamColors, type TeamColor } from "../hooks/useTeamColors";
+import TeamLogo from "./TeamLogo";
 
 interface ColumnDef {
   key: string;
@@ -30,7 +32,7 @@ const RANK_COL: ColumnDef = {
   sortValue: t => Number(t.rank),
 };
 
-const TEAM_COL: ColumnDef = {
+const createTeamColumn = (getTeamColor: (teamName: string) => TeamColor | undefined): ColumnDef => ({
   key: "team",
   label: "Équipe",
   width: "1.5fr",
@@ -38,20 +40,11 @@ const TEAM_COL: ColumnDef = {
   sortValue: t => t.team,
   render: t => (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <div
-        style={{
-          width: 26,
-          height: 26,
-          borderRadius: 5,
-          flexShrink: 0,
-          background:
-            "repeating-linear-gradient(45deg, oklch(0.5 0.03 250), oklch(0.5 0.03 250) 3px, oklch(0.22 0.02 250) 3px, oklch(0.22 0.02 250) 6px)",
-        }}
-      />
+      <TeamLogo teamName={t.team} color={getTeamColor(t.team)} size={26} radius={5} />
       <div style={{ fontWeight: 600 }}>{t.team}</div>
     </div>
   ),
-};
+});
 
 const RECORD_COLUMNS: ColumnDef[] = [
   { key: "gp", label: "PJ", width: "56px", render: t => t.gp, sortValue: t => t.gp },
@@ -94,8 +87,13 @@ const STREAK_COLUMNS: ColumnDef[] = [
   },
 ];
 
-const FULL_COLUMNS: ColumnDef[] = [RANK_COL, TEAM_COL, ...RECORD_COLUMNS, ...STREAK_COLUMNS];
-const RECORD_ONLY_COLUMNS: ColumnDef[] = [RANK_COL, TEAM_COL, ...RECORD_COLUMNS];
+const createColumns = (getTeamColor: (teamName: string) => TeamColor | undefined) => {
+  const teamCol = createTeamColumn(getTeamColor);
+  return {
+    full: [RANK_COL, teamCol, ...RECORD_COLUMNS, ...STREAK_COLUMNS],
+    recordOnly: [RANK_COL, teamCol, ...RECORD_COLUMNS],
+  };
+};
 
 const stickyStyle = (sticky: number | undefined): CSSProperties =>
   sticky === undefined
@@ -218,6 +216,13 @@ function StandingsSection({
 export default function Standings() {
   const standingsResult = useSheetRawData(STANDINGS_SHEET);
   const matchesResult = useSheetRawData(calendarTabs[0]);
+  const teamColors = useTeamColors();
+  const { getTeamColor } = teamColors;
+
+  const { full: FULL_COLUMNS, recordOnly: RECORD_ONLY_COLUMNS } = useMemo(
+    () => createColumns(getTeamColor),
+    [getTeamColor]
+  );
 
   const gameLogs = useMemo(() => extractGameLogs(matchesResult.data), [matchesResult.data]);
 
@@ -244,7 +249,7 @@ export default function Standings() {
     [standingsResult.data]
   );
 
-  const { loading, error } = combineFetchStates(standingsResult, matchesResult);
+  const { loading, error } = combineFetchStates(standingsResult, matchesResult, teamColors);
 
   return (
     <div>

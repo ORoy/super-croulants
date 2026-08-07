@@ -17,7 +17,7 @@ export default function TeamLogo({ teamName, color, size, radius = 8 }: TeamLogo
     borderRadius: radius,
     flexShrink: 0,
     background: color?.background || colors.border,
-    border: `2px solid ${color?.text || colors.mutedText}`,
+    border: `1px solid ${color?.text || colors.mutedText}`,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
