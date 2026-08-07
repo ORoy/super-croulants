@@ -1,18 +1,10 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
 import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
 import { colors } from "../theme/tokens";
-
-const logoStyle = (background: string, border: string): CSSProperties => ({
-  width: 48,
-  height: 48,
-  borderRadius: 8,
-  flexShrink: 0,
-  background: background || colors.border,
-  border: border ? `2px solid ${border}` : undefined,
-});
+import TeamLogo from "./TeamLogo";
 
 export default function Teams() {
   const navigate = useNavigate();
@@ -67,7 +59,7 @@ export default function Teams() {
                   gap: 10,
                 }}
               >
-                <div style={logoStyle(teamColor?.background ?? "", teamColor?.text ?? "")} />
+                <TeamLogo teamName={team.team} color={teamColor} size={48} />
                 <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 19, fontWeight: 700 }}>
                   {team.team}
                 </div>

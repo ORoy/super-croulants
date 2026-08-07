@@ -7,15 +7,7 @@ import { transformMatches } from "../utils/matches";
 import { findStarsForDate } from "../utils/stars";
 import { colors } from "../theme/tokens";
 import DetailPageStatus from "./DetailPageStatus";
-
-const badgeStyle = (background: string | undefined, border: string | undefined): CSSProperties => ({
-  width: 40,
-  height: 40,
-  borderRadius: 8,
-  flexShrink: 0,
-  background: background || colors.border,
-  border: border ? `2px solid ${border}` : undefined,
-});
+import TeamLogo from "./TeamLogo";
 
 const starCardStyle: CSSProperties = {
   background: colors.cardBackground,
@@ -95,7 +87,7 @@ export default function MatchDetail() {
           >
             {match.awayTeam}
           </div>
-          <div style={badgeStyle(awayColor?.background, awayColor?.text)} />
+          <TeamLogo teamName={match.awayTeam} color={awayColor} size={40} />
         </div>
         <div
           style={{
@@ -108,7 +100,7 @@ export default function MatchDetail() {
           {match.resultLabel}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={badgeStyle(homeColor?.background, homeColor?.text)} />
+          <TeamLogo teamName={match.homeTeam} color={homeColor} size={40} />
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800 }}>
             {match.homeTeam}
           </div>

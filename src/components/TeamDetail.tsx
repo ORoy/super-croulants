@@ -10,6 +10,7 @@ import { equalsIgnoreCase } from "../utils/textMatch";
 import { colors } from "../theme/tokens";
 import DetailPageStatus from "./DetailPageStatus";
 import StatCard from "./StatCard";
+import TeamLogo from "./TeamLogo";
 
 const ROSTER_SHEET = playerTabs.find(tab => tab.label === "Saison Régulière")!;
 
@@ -74,16 +75,7 @@ export default function TeamDetail() {
     <div>
       {backLink}
       <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 22, flexWrap: "wrap" }}>
-        <div
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: 12,
-            flexShrink: 0,
-            background: teamColor?.background || colors.border,
-            border: teamColor?.text ? `2px solid ${teamColor.text}` : undefined,
-          }}
-        />
+        <TeamLogo teamName={team.team} color={teamColor} size={72} radius={12} />
         <div>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 36, fontWeight: 800, lineHeight: 1 }}>
             {team.team}
