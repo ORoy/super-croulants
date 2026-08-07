@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
 import { fetchSheetData, fetchSheetRawData } from "../utils/sheetFetch";
 import type { RowData } from "../utils/sheetFetch";
+import type { SheetRange } from "../config/sheets";
 
 interface UseFetchResult<T> {
   data: T;
   loading: boolean;
   error: string | null;
+}
+
+// Combines several fetch results into one loading/error pair: loading while
+// any source is still loading, surfacing the first error encountered.
+export function combineFetchStates(
+  ...results: { loading: boolean; error: string | null }[]
+): { loading: boolean; error: string | null } {
+  return {
+    loading: results.some(r => r.loading),
+    error: results.find(r => r.error)?.error ?? null,
+  };
 }
 
 function useSheetFetch<T>(
@@ -39,19 +51,13 @@ function useSheetFetch<T>(
   return { data, loading, error };
 }
 
-export const useSheetData = (
-  range: string,
-  sheetName?: string
-): UseFetchResult<RowData[]> =>
+export const useSheetData = ({ range, sheetName }: SheetRange): UseFetchResult<RowData[]> =>
   useSheetFetch(apiKey => fetchSheetData(range, apiKey, sheetName), [], [
     range,
     sheetName,
   ]);
 
-export const useSheetRawData = (
-  range: string,
-  sheetName?: string
-): UseFetchResult<string[][]> =>
+export const useSheetRawData = ({ range, sheetName }: SheetRange): UseFetchResult<string[][]> =>
   useSheetFetch(apiKey => fetchSheetRawData(range, apiKey, sheetName), [], [
     range,
     sheetName,

@@ -7,4 +7,6 @@ export const colors = {
   mutedText: "oklch(0.68 0.02 250)",
   primaryText: "oklch(0.95 0.01 250)",
   accent: "#5D7C9A",
+  positive: "oklch(0.7 0.14 150)",
+  error: "oklch(0.65 0.16 25)",
 } as const;

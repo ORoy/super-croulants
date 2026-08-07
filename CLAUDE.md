@@ -19,6 +19,6 @@ Uses `HashRouter` (GitHub Pages has no server routing). Requires `VITE_GOOGLE_SH
 ## Architecture
 
 - No backend. Data comes live from one hardcoded Google Sheet (`src/utils/sheetFetch.ts`), via `fetchSheetData` (headers = first row) or `fetchSheetRawData` (raw rows, for custom parsing like `Calendar.tsx`).
-- Each UI tab hardcodes a sheet tab name + A1 range (e.g. `PlayersTabs.tsx`, `Calendar.tsx`). These are brittle: change them if the spreadsheet layout changes.
-- `DataTable` = generic table renderer. `TeamTable` = variant supporting grouped 2-row headers, built but **not wired up yet** — `TeamRanking.tsx` still shows placeholder text (known gap).
-- Routes (`App.tsx`): `/players/*`, `/teams`, `/calendar`, fallback → players. Each page owns its own tab state + sheet fetch, no shared data layer.
+- Each UI tab hardcodes a sheet range (`src/config/sheets.ts`, as `{ range, sheetName }` pairs). These are brittle: change them if the spreadsheet layout changes.
+- `StatTable` = generic sortable table renderer (sticky header/columns), used by `Leaderboard.tsx` and `TeamDetail.tsx`.
+- Routes (`App.tsx`): `/standings`, `/leaderboard(/:playerId)`, `/teams(/:teamId)`, `/calendar(/:matchId)`, fallback → `/leaderboard`. Each page owns its own tab state + sheet fetch, no shared data layer.

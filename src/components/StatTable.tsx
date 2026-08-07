@@ -1,16 +1,12 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { colors } from "../theme/tokens";
 import type { RowData } from "../utils/sheetFetch";
-import { compareSortValues, type SortDirection } from "../utils/sortValues";
+import { compareSortValues } from "../utils/sortValues";
+import { useColumnSort } from "../hooks/useColumnSort";
 
 export interface TableColumn {
   key: string;
   label: string;
-}
-
-interface SortState {
-  key: string;
-  direction: SortDirection;
 }
 
 const parseNumeric = (raw: string | undefined): number | null => {
@@ -54,18 +50,8 @@ const headerCellStyle: CSSProperties = {
 // (rank + name), dark non-interactive rows. Columns are entirely driven by
 // the `columns` prop so callers control shape/order/labels per mode.
 export default function StatTable({ columns, rows, stickyColumnCount = 2, onRowClick }: StatTableProps) {
-  const [sortState, setSortState] = useState<SortState | null>(null);
+  const { sortState, toggleSort } = useColumnSort();
   const stickyCount = Math.min(stickyColumnCount, 2, columns.length);
-
-  const handleHeaderClick = (key: string, index: number) => {
-    setSortState(prev => {
-      if (prev?.key === key) {
-        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
-      }
-      const direction: SortDirection = index === 0 || !isNumericColumn(rows, key) ? "asc" : "desc";
-      return { key, direction };
-    });
-  };
 
   const sortedRows = useMemo(() => {
     if (!sortState) return rows;
@@ -124,7 +110,7 @@ export default function StatTable({ columns, rows, stickyColumnCount = 2, onRowC
           {columns.map((column, index) => (
             <div
               key={column.key}
-              onClick={() => handleHeaderClick(column.key, index)}
+              onClick={() => toggleSort(column.key, index, isNumericColumn(rows, column.key))}
               style={{
                 ...headerCellStyle,
                 ...stickyCellStyle(index),

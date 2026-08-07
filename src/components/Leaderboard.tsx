@@ -159,7 +159,7 @@ export default function Leaderboard() {
   const activeMode = MODES[activeModeIndex];
 
   const { data, loading, error } = useSheetData(
-    playerTabs.find(tab => tab.label === activeMode.sheetLabel)?.range ?? ""
+    playerTabs.find(tab => tab.label === activeMode.sheetLabel) ?? { range: "" }
   );
 
   const rows = useMemo(() => data.map(normalizeRow), [data]);
@@ -209,7 +209,7 @@ export default function Leaderboard() {
       {loading && <div style={{ color: colors.mutedText, padding: "24px 0" }}>Chargement…</div>}
 
       {!loading && error && (
-        <div style={{ color: "oklch(0.65 0.16 25)", padding: "24px 0" }}>
+        <div style={{ color: colors.error, padding: "24px 0" }}>
           Erreur de chargement : {error}
         </div>
       )}

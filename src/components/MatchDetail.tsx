@@ -1,13 +1,12 @@
 import { useMemo, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useSheetRawData } from "../hooks/useSheetData";
+import { useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
-import { calendarTabs, SHEET_NAMES } from "../config/sheets";
+import { calendarTabs } from "../config/sheets";
 import { transformMatches } from "../utils/matches";
 import { findStarsForDate } from "../utils/stars";
 import { colors } from "../theme/tokens";
-
-const ERROR_COLOR = "oklch(0.65 0.16 25)";
+import DetailPageStatus from "./DetailPageStatus";
 
 const badgeStyle = (background: string | undefined, border: string | undefined): CSSProperties => ({
   width: 40,
@@ -30,28 +29,22 @@ export default function MatchDetail() {
   const { matchId = "" } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
 
-  const { data: matchesRaw, loading: matchesLoading, error: matchesError } = useSheetRawData(
-    calendarTabs[0].range,
-    SHEET_NAMES.calendar
-  );
-  const { data: starsRaw, loading: starsLoading, error: starsError } = useSheetRawData(
-    calendarTabs[1].range,
-    SHEET_NAMES.calendar
-  );
-  const { getTeamColor, loading: colorsLoading, error: colorsError } = useTeamColors();
+  const matchesResult = useSheetRawData(calendarTabs[0]);
+  const starsResult = useSheetRawData(calendarTabs[1]);
+  const teamColors = useTeamColors();
+  const { getTeamColor } = teamColors;
 
   const match = useMemo(
-    () => transformMatches(matchesRaw).find(m => m.id === matchId),
-    [matchesRaw, matchId]
+    () => transformMatches(matchesResult.data).find(m => m.id === matchId),
+    [matchesResult.data, matchId]
   );
 
   const stars = useMemo(
-    () => (match ? findStarsForDate(starsRaw, match.date) : []),
-    [starsRaw, match]
+    () => (match ? findStarsForDate(starsResult.data, match.date) : []),
+    [starsResult.data, match]
   );
 
-  const loading = matchesLoading || starsLoading || colorsLoading;
-  const error = matchesError ?? starsError ?? colorsError;
+  const { loading, error } = combineFetchStates(matchesResult, starsResult, teamColors);
 
   const backLink = (
     <div
@@ -62,30 +55,14 @@ export default function MatchDetail() {
     </div>
   );
 
-  if (loading) {
+  if (loading || error || !match) {
     return (
-      <div>
-        {backLink}
-        <div style={{ color: colors.mutedText }}>Chargement…</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div>
-        {backLink}
-        <div style={{ color: ERROR_COLOR }}>Erreur de chargement : {error}</div>
-      </div>
-    );
-  }
-
-  if (!match) {
-    return (
-      <div>
-        {backLink}
-        <div style={{ color: colors.mutedText }}>Match introuvable.</div>
-      </div>
+      <DetailPageStatus
+        backLink={backLink}
+        loading={loading}
+        error={error}
+        notFoundMessage={match ? undefined : "Match introuvable."}
+      />
     );
   }
 

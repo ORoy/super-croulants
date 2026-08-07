@@ -1,24 +1,12 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSheetRawData } from "../hooks/useSheetData";
-import { calendarTabs, SHEET_NAMES } from "../config/sheets";
+import { useIsMobile } from "../hooks/useIsMobile";
+import { calendarTabs } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { transformMatches, type Match } from "../utils/matches";
 
-const MOBILE_BREAKPOINT = 720;
 const ROW_BORDER = "oklch(0.23 0.02 250)";
-
-const useIsMobile = (breakpoint: number): boolean => {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint);
-
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < breakpoint);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [breakpoint]);
-
-  return isMobile;
-};
 
 const mutedLabelStyle: CSSProperties = {
   fontSize: 11,
@@ -175,11 +163,8 @@ function MatchSection({
 
 export default function Calendar() {
   const navigate = useNavigate();
-  const { data: rawData, loading, error } = useSheetRawData(
-    calendarTabs[0].range,
-    SHEET_NAMES.calendar
-  );
-  const isMobile = useIsMobile(MOBILE_BREAKPOINT);
+  const { data: rawData, loading, error } = useSheetRawData(calendarTabs[0]);
+  const isMobile = useIsMobile();
 
   const matches = useMemo(() => transformMatches(rawData), [rawData]);
   const upcomingMatches = useMemo(() => matches.filter(match => !match.played), [matches]);
@@ -200,7 +185,7 @@ export default function Calendar() {
       </div>
 
       {loading && <div style={{ color: colors.mutedText, fontSize: 14 }}>Chargement…</div>}
-      {error && <div style={{ color: "oklch(0.65 0.16 25)", fontSize: 14 }}>{error}</div>}
+      {error && <div style={{ color: colors.error, fontSize: 14 }}>{error}</div>}
 
       {!loading && !error && (
         <>

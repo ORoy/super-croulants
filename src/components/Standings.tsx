@@ -1,123 +1,12 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSheetRawData } from "../hooks/useSheetData";
-import { SHEET_NAMES, calendarTabs } from "../config/sheets";
+import { useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
+import { calendarTabs } from "../config/sheets";
 import { colors } from "../theme/tokens";
-import { STANDINGS_RANGE, SECTION_TITLES, parseStandingsSection, type TeamStanding } from "../utils/standings";
-import { compareSortValues, type SortDirection } from "../utils/sortValues";
-
-// --- Streak / last-10 derivation from the Calendar's Matchs data ---------
-// That sheet has no streak/record column, so we replicate the game-log
-// parsing used by Calendar.tsx's transformMatches (two games packed per
-// source row) to build a chronological per-team result log.
-
-type GameOutcome = "W" | "L" | "T";
-
-interface TeamGame {
-  outcome: GameOutcome;
-  isRegularSeason: boolean;
-}
-
-const REGULAR_SEASON_LABEL = "Saison";
-
-const extractGameLogs = (rawRows: string[][]): Map<string, TeamGame[]> => {
-  const logs = new Map<string, TeamGame[]>();
-  const appendLog = (team: string, game: TeamGame) => {
-    if (!team) return;
-    const existing = logs.get(team);
-    if (existing) {
-      existing.push(game);
-    } else {
-      logs.set(team, [game]);
-    }
-  };
-
-  const headerRowIndex = rawRows.findIndex(row => row[1] === "Date" && row[5] === "Visiteurs");
-  if (headerRowIndex === -1) {
-    return logs;
-  }
-
-  for (let rowIndex = headerRowIndex + 1; rowIndex < rawRows.length; rowIndex++) {
-    const row = rawRows[rowIndex] ?? [];
-    const type = row[0] ?? "";
-    const isRegularSeason = type === REGULAR_SEASON_LABEL;
-
-    const games = [
-      { awayTeam: row[5], awayGoals: row[4], homeTeam: row[7], homeGoals: row[8] },
-      { awayTeam: row[14], awayGoals: row[13], homeTeam: row[16], homeGoals: row[17] },
-    ];
-
-    for (const game of games) {
-      const awayGoals = Number(game.awayGoals);
-      const homeGoals = Number(game.homeGoals);
-      // Unplayed slots are filled with "----"/"--" placeholders, which fail
-      // to parse as finite numbers.
-      if (!Number.isFinite(awayGoals) || !Number.isFinite(homeGoals)) {
-        continue;
-      }
-
-      const awayOutcome: GameOutcome =
-        awayGoals > homeGoals ? "W" : awayGoals < homeGoals ? "L" : "T";
-      const homeOutcome: GameOutcome =
-        homeGoals > awayGoals ? "W" : homeGoals < awayGoals ? "L" : "T";
-
-      appendLog(game.awayTeam, { outcome: awayOutcome, isRegularSeason });
-      appendLog(game.homeTeam, { outcome: homeOutcome, isRegularSeason });
-    }
-  }
-
-  return logs;
-};
-
-interface StreakInfo {
-  label: string;
-  color: string;
-}
-
-const computeStreak = (games: TeamGame[]): StreakInfo => {
-  if (games.length === 0) {
-    return { label: "—", color: colors.mutedText };
-  }
-
-  const last = games[games.length - 1].outcome;
-  let count = 0;
-  for (let i = games.length - 1; i >= 0 && games[i].outcome === last; i--) {
-    count++;
-  }
-
-  const prefix = last === "W" ? "W" : last === "L" ? "L" : "N";
-  const color = last === "W" ? POSITIVE_COLOR : last === "L" ? NEGATIVE_COLOR : colors.mutedText;
-  return { label: `${prefix}${count}`, color };
-};
-
-const computeLast10 = (games: TeamGame[]): string => {
-  const recent = games.slice(-10);
-  const w = recent.filter(g => g.outcome === "W").length;
-  const l = recent.filter(g => g.outcome === "L").length;
-  const t = recent.filter(g => g.outcome === "T").length;
-  return t > 0 ? `${w}-${l}-${t}` : `${w}-${l}`;
-};
-
-const withStreaks = (
-  teams: TeamStanding[],
-  gameLogs: Map<string, TeamGame[]>,
-  regularSeasonOnly: boolean
-): DisplayTeam[] =>
-  teams.map(team => {
-    const allGames = gameLogs.get(team.team) ?? [];
-    const games = regularSeasonOnly ? allGames.filter(g => g.isRegularSeason) : allGames;
-    return { ...team, streak: computeStreak(games), last10: computeLast10(games) };
-  });
-
-// --- Presentation ----------------------------------------------------------
-
-const POSITIVE_COLOR = "oklch(0.7 0.14 150)";
-const NEGATIVE_COLOR = "oklch(0.65 0.16 25)";
-
-interface DisplayTeam extends TeamStanding {
-  streak?: StreakInfo;
-  last10?: string;
-}
+import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
+import { extractGameLogs, withStreaks, type DisplayTeam } from "../utils/standingsStreaks";
+import { compareSortValues } from "../utils/sortValues";
+import { useColumnSort } from "../hooks/useColumnSort";
 
 interface ColumnDef {
   key: string;
@@ -130,7 +19,7 @@ interface ColumnDef {
 }
 
 const diffLabel = (value: number) => (value >= 0 ? `+${value}` : `${value}`);
-const diffColor = (value: number) => (value >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR);
+const diffColor = (value: number) => (value >= 0 ? colors.positive : colors.error);
 
 const RANK_COL: ColumnDef = {
   key: "rank",
@@ -143,7 +32,7 @@ const RANK_COL: ColumnDef = {
 
 const TEAM_COL: ColumnDef = {
   key: "team",
-  label: "Team",
+  label: "Équipe",
   width: "1.5fr",
   sticky: 44,
   sortValue: t => t.team,
@@ -165,10 +54,10 @@ const TEAM_COL: ColumnDef = {
 };
 
 const RECORD_COLUMNS: ColumnDef[] = [
-  { key: "gp", label: "GP", width: "56px", render: t => t.gp, sortValue: t => t.gp },
-  { key: "w", label: "W", width: "56px", render: t => t.w, sortValue: t => t.w },
-  { key: "l", label: "L", width: "56px", render: t => t.l, sortValue: t => t.l },
-  { key: "otl", label: "OTL", width: "56px", render: t => t.otl, sortValue: t => t.otl },
+  { key: "gp", label: "PJ", width: "56px", render: t => t.gp, sortValue: t => t.gp },
+  { key: "w", label: "V", width: "56px", render: t => t.w, sortValue: t => t.w },
+  { key: "l", label: "D", width: "56px", render: t => t.l, sortValue: t => t.l },
+  { key: "otl", label: "DP", width: "56px", render: t => t.otl, sortValue: t => t.otl },
   {
     key: "pts",
     label: "PTS",
@@ -176,8 +65,8 @@ const RECORD_COLUMNS: ColumnDef[] = [
     render: t => <strong>{t.pts}</strong>,
     sortValue: t => t.pts,
   },
-  { key: "gf", label: "GF", width: "56px", render: t => t.gf, sortValue: t => t.gf },
-  { key: "ga", label: "GA", width: "56px", render: t => t.ga, sortValue: t => t.ga },
+  { key: "gf", label: "BP", width: "56px", render: t => t.gf, sortValue: t => t.gf },
+  { key: "ga", label: "BC", width: "56px", render: t => t.ga, sortValue: t => t.ga },
   {
     key: "diff",
     label: "DIFF",
@@ -192,14 +81,14 @@ const RECORD_COLUMNS: ColumnDef[] = [
 const STREAK_COLUMNS: ColumnDef[] = [
   {
     key: "streak",
-    label: "STRK",
+    label: "SÉRIE",
     width: "72px",
     render: t =>
       t.streak && <span style={{ color: t.streak.color, fontWeight: 600 }}>{t.streak.label}</span>,
   },
   {
     key: "last10",
-    label: "L10",
+    label: "10D",
     width: "80px",
     render: t => <span style={{ color: colors.mutedText }}>{t.last10}</span>,
   },
@@ -218,11 +107,6 @@ const stickyStyle = (sticky: number | undefined): CSSProperties =>
         background: colors.cardBackground,
       };
 
-interface SortState {
-  key: string;
-  direction: SortDirection;
-}
-
 function StandingsSection({
   title,
   columns,
@@ -233,24 +117,12 @@ function StandingsSection({
   teams: DisplayTeam[];
 }) {
   const navigate = useNavigate();
-  const [sortState, setSortState] = useState<SortState | null>(null);
+  const { sortState, toggleSort } = useColumnSort();
   const gridTemplateColumns = columns.map(c => c.width).join(" ");
   const minWidth = columns.reduce(
     (sum, c) => sum + (c.width.endsWith("fr") ? 180 : parseInt(c.width, 10)),
     0
   );
-
-  const handleHeaderClick = (column: ColumnDef, index: number) => {
-    if (!column.sortValue) return;
-    setSortState(prev => {
-      if (prev?.key === column.key) {
-        return { key: column.key, direction: prev.direction === "asc" ? "desc" : "asc" };
-      }
-      const sample = teams.length > 0 ? column.sortValue!(teams[0]) : "";
-      const direction: SortDirection = index === 0 || typeof sample !== "number" ? "asc" : "desc";
-      return { key: column.key, direction };
-    });
-  };
 
   const sortedTeams = useMemo(() => {
     if (!sortState) return teams;
@@ -299,7 +171,11 @@ function StandingsSection({
           {columns.map((col, index) => (
             <div
               key={col.key}
-              onClick={() => handleHeaderClick(col, index)}
+              onClick={() => {
+                if (!col.sortValue) return;
+                const sample = teams.length > 0 ? col.sortValue(teams[0]) : "";
+                toggleSort(col.key, index, typeof sample === "number");
+              }}
               style={{ ...stickyStyle(col.sticky), cursor: col.sortValue ? "pointer" : undefined }}
             >
               {col.label}
@@ -340,52 +216,55 @@ function StandingsSection({
 }
 
 export default function Standings() {
-  const { data: standingsRaw, loading: standingsLoading, error: standingsError } = useSheetRawData(
-    STANDINGS_RANGE,
-    SHEET_NAMES.standings
-  );
-  const { data: matchesRaw, loading: matchesLoading, error: matchesError } = useSheetRawData(
-    calendarTabs[0].range,
-    SHEET_NAMES.calendar
-  );
+  const standingsResult = useSheetRawData(STANDINGS_SHEET);
+  const matchesResult = useSheetRawData(calendarTabs[0]);
 
-  const gameLogs = useMemo(() => extractGameLogs(matchesRaw), [matchesRaw]);
+  const gameLogs = useMemo(() => extractGameLogs(matchesResult.data), [matchesResult.data]);
 
   const overall = useMemo(
-    () => withStreaks(parseStandingsSection(standingsRaw, SECTION_TITLES.overall), gameLogs, false),
-    [standingsRaw, gameLogs]
+    () =>
+      withStreaks(
+        parseStandingsSection(standingsResult.data, SECTION_TITLES.overall),
+        gameLogs,
+        false
+      ),
+    [standingsResult.data, gameLogs]
   );
   const regular = useMemo(
-    () => withStreaks(parseStandingsSection(standingsRaw, SECTION_TITLES.regular), gameLogs, true),
-    [standingsRaw, gameLogs]
+    () =>
+      withStreaks(
+        parseStandingsSection(standingsResult.data, SECTION_TITLES.regular),
+        gameLogs,
+        true
+      ),
+    [standingsResult.data, gameLogs]
   );
   const series = useMemo(
-    () => parseStandingsSection(standingsRaw, SECTION_TITLES.series),
-    [standingsRaw]
+    () => parseStandingsSection(standingsResult.data, SECTION_TITLES.series),
+    [standingsResult.data]
   );
 
-  const loading = standingsLoading || matchesLoading;
-  const error = standingsError ?? matchesError;
+  const { loading, error } = combineFetchStates(standingsResult, matchesResult);
 
   return (
     <div>
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800 }}>
-          League Standings
+          Classement des Équipes
         </div>
         <div style={{ fontSize: 13, color: colors.mutedText }}>
-          Overall (regular season + series)
+          Ensemble (saison régulière + séries)
         </div>
       </div>
 
-      {loading && <div style={{ color: colors.mutedText }}>Loading…</div>}
-      {error && <div style={{ color: NEGATIVE_COLOR }}>Error loading standings: {error}</div>}
+      {loading && <div style={{ color: colors.mutedText }}>Chargement…</div>}
+      {error && <div style={{ color: colors.error }}>Erreur de chargement : {error}</div>}
 
       {!loading && !error && (
         <>
-          <StandingsSection title="Overall" columns={FULL_COLUMNS} teams={overall} />
-          <StandingsSection title="Regular Season" columns={FULL_COLUMNS} teams={regular} />
-          <StandingsSection title="Series" columns={RECORD_ONLY_COLUMNS} teams={series} />
+          <StandingsSection title="Saison + Séries" columns={FULL_COLUMNS} teams={overall} />
+          <StandingsSection title="Saison Régulière" columns={FULL_COLUMNS} teams={regular} />
+          <StandingsSection title="Séries" columns={RECORD_ONLY_COLUMNS} teams={series} />
         </>
       )}
     </div>

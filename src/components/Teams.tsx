@@ -1,12 +1,9 @@
 import { useMemo, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSheetRawData } from "../hooks/useSheetData";
+import { useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
-import { SHEET_NAMES } from "../config/sheets";
-import { STANDINGS_RANGE, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
+import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
 import { colors } from "../theme/tokens";
-
-const ERROR_COLOR = "oklch(0.65 0.16 25)";
 
 const logoStyle = (background: string, border: string): CSSProperties => ({
   width: 48,
@@ -20,19 +17,16 @@ const logoStyle = (background: string, border: string): CSSProperties => ({
 export default function Teams() {
   const navigate = useNavigate();
 
-  const { data: standingsRaw, loading: standingsLoading, error: standingsError } = useSheetRawData(
-    STANDINGS_RANGE,
-    SHEET_NAMES.standings
-  );
-  const { getTeamColor, loading: colorsLoading, error: colorsError } = useTeamColors();
+  const standingsResult = useSheetRawData(STANDINGS_SHEET);
+  const teamColors = useTeamColors();
+  const { getTeamColor } = teamColors;
 
   const teams = useMemo(
-    () => parseStandingsSection(standingsRaw, SECTION_TITLES.overall),
-    [standingsRaw]
+    () => parseStandingsSection(standingsResult.data, SECTION_TITLES.overall),
+    [standingsResult.data]
   );
 
-  const loading = standingsLoading || colorsLoading;
-  const error = standingsError ?? colorsError;
+  const { loading, error } = combineFetchStates(standingsResult, teamColors);
 
   return (
     <div>
@@ -46,7 +40,7 @@ export default function Teams() {
       </div>
 
       {loading && <div style={{ color: colors.mutedText }}>Chargement…</div>}
-      {error && <div style={{ color: ERROR_COLOR }}>Erreur de chargement : {error}</div>}
+      {error && <div style={{ color: colors.error }}>Erreur de chargement : {error}</div>}
 
       {!loading && !error && (
         <div

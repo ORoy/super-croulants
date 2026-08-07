@@ -1,8 +1,7 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { colors } from "../theme/tokens";
-
-const MOBILE_BREAKPOINT = 720;
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const NAV_ITEMS = [
   { label: "Standings", path: "/standings" },
@@ -56,21 +55,9 @@ const logoStyle: CSSProperties = {
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < MOBILE_BREAKPOINT);
+  const isMobile = useIsMobile();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-
-  useEffect(() => {
-    const onResize = () => {
-      const mobile = window.innerWidth < MOBILE_BREAKPOINT;
-      setIsMobile((prevIsMobile) => {
-        if (mobile === prevIsMobile) return prevIsMobile;
-        if (!mobile) setMobileNavOpen(false);
-        return mobile;
-      });
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+  const showMobileNav = isMobile && mobileNavOpen;
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
@@ -183,7 +170,7 @@ export default function Header() {
         )}
       </div>
 
-      {isMobile && mobileNavOpen && (
+      {showMobileNav && (
         <div
           style={{
             borderTop: "1px solid oklch(0.28 0.02 250)",

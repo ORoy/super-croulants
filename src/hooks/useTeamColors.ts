@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useSheetData } from "./useSheetData";
-import { SHEET_NAMES, teamColorsRange } from "../config/sheets";
+import { TEAM_COLORS_SHEET } from "../config/sheets";
+import { normalizeForComparison } from "../utils/textMatch";
 
 export interface TeamColor {
   background: string;
@@ -16,14 +17,14 @@ interface UseTeamColorsResult {
 // `BD Site WEB` team names ("Red Storm") don't match the standings/roster
 // sheets' casing ("RED STORM"), so lookups are case-insensitive.
 export function useTeamColors(): UseTeamColorsResult {
-  const { data, loading, error } = useSheetData(teamColorsRange, SHEET_NAMES.teamColors);
+  const { data, loading, error } = useSheetData(TEAM_COLORS_SHEET);
 
   const colorsByTeam = useMemo(() => {
     const map = new Map<string, TeamColor>();
     for (const row of data) {
       const name = row["Équipe"];
       if (!name) continue;
-      map.set(name.toLowerCase(), {
+      map.set(normalizeForComparison(name), {
         background: row["Couleur Fond"] ?? "",
         text: row["Couleur text"] ?? "",
       });
@@ -32,7 +33,7 @@ export function useTeamColors(): UseTeamColorsResult {
   }, [data]);
 
   const getTeamColor = (teamName: string): TeamColor | undefined =>
-    colorsByTeam.get(teamName.toLowerCase());
+    colorsByTeam.get(normalizeForComparison(teamName));
 
   return { getTeamColor, loading, error };
 }

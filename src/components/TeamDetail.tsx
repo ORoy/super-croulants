@@ -1,16 +1,17 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import StatTable, { type TableColumn } from "./StatTable";
-import { useSheetRawData, useSheetData } from "../hooks/useSheetData";
+import { useSheetRawData, useSheetData, combineFetchStates } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
-import { playerTabs, SHEET_NAMES } from "../config/sheets";
-import { STANDINGS_RANGE, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
+import { playerTabs } from "../config/sheets";
+import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
 import { normalizeRow } from "../utils/normalizeRow";
+import { equalsIgnoreCase } from "../utils/textMatch";
 import { colors } from "../theme/tokens";
+import DetailPageStatus from "./DetailPageStatus";
+import StatCard from "./StatCard";
 
-const ERROR_COLOR = "oklch(0.65 0.16 25)";
-
-const ROSTER_RANGE = playerTabs.find(tab => tab.label === "Saison Régulière")!.range;
+const ROSTER_SHEET = playerTabs.find(tab => tab.label === "Saison Régulière")!;
 
 const ROSTER_COLUMNS: TableColumn[] = [
   { key: "RANG", label: "RANG" },
@@ -22,54 +23,30 @@ const ROSTER_COLUMNS: TableColumn[] = [
   { key: "MOY PTS/ Match", label: "MOY PTS/MATCH" },
 ];
 
-const statCardStyle: CSSProperties = {
-  background: colors.cardBackground,
-  border: `1px solid ${colors.border}`,
-  borderRadius: 10,
-  padding: 16,
-};
-
-const statLabelStyle: CSSProperties = {
-  fontSize: 11,
-  letterSpacing: 1,
-  textTransform: "uppercase",
-  color: colors.mutedText,
-};
-
-const statValueStyle: CSSProperties = {
-  fontFamily: "'Barlow Condensed', sans-serif",
-  fontSize: 26,
-  fontWeight: 800,
-  marginTop: 4,
-};
-
 export default function TeamDetail() {
   const { teamId = "" } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
   const decodedTeamId = decodeURIComponent(teamId);
 
-  const { data: standingsRaw, loading: standingsLoading, error: standingsError } = useSheetRawData(
-    STANDINGS_RANGE,
-    SHEET_NAMES.standings
-  );
-  const { data: rosterRaw, loading: rosterLoading, error: rosterError } = useSheetData(ROSTER_RANGE);
-  const { getTeamColor, loading: colorsLoading, error: colorsError } = useTeamColors();
+  const standingsResult = useSheetRawData(STANDINGS_SHEET);
+  const rosterResult = useSheetData(ROSTER_SHEET);
+  const teamColors = useTeamColors();
+  const { getTeamColor } = teamColors;
 
   const team = useMemo(() => {
-    const teams = parseStandingsSection(standingsRaw, SECTION_TITLES.overall);
-    return teams.find(t => t.team.toUpperCase() === decodedTeamId.toUpperCase());
-  }, [standingsRaw, decodedTeamId]);
+    const teams = parseStandingsSection(standingsResult.data, SECTION_TITLES.overall);
+    return teams.find(t => equalsIgnoreCase(t.team, decodedTeamId));
+  }, [standingsResult.data, decodedTeamId]);
 
   const roster = useMemo(
     () =>
-      rosterRaw
+      rosterResult.data
         .map(normalizeRow)
-        .filter(row => (row["ÉQUIPES"] ?? "").toUpperCase() === decodedTeamId.toUpperCase()),
-    [rosterRaw, decodedTeamId]
+        .filter(row => equalsIgnoreCase(row["ÉQUIPES"] ?? "", decodedTeamId)),
+    [rosterResult.data, decodedTeamId]
   );
 
-  const loading = standingsLoading || rosterLoading || colorsLoading;
-  const error = standingsError ?? rosterError ?? colorsError;
+  const { loading, error } = combineFetchStates(standingsResult, rosterResult, teamColors);
 
   const teamColor = getTeamColor(decodedTeamId);
 
@@ -82,30 +59,14 @@ export default function TeamDetail() {
     </div>
   );
 
-  if (loading) {
+  if (loading || error || !team) {
     return (
-      <div>
-        {backLink}
-        <div style={{ color: colors.mutedText }}>Chargement…</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div>
-        {backLink}
-        <div style={{ color: ERROR_COLOR }}>Erreur de chargement : {error}</div>
-      </div>
-    );
-  }
-
-  if (!team) {
-    return (
-      <div>
-        {backLink}
-        <div style={{ color: colors.mutedText }}>Équipe introuvable.</div>
-      </div>
+      <DetailPageStatus
+        backLink={backLink}
+        loading={loading}
+        error={error}
+        notFoundMessage={team ? undefined : "Équipe introuvable."}
+      />
     );
   }
 
@@ -141,20 +102,15 @@ export default function TeamDetail() {
           marginBottom: 24,
         }}
       >
-        <div style={statCardStyle}>
-          <div style={statLabelStyle}>Fiche</div>
-          <div style={statValueStyle}>
-            {team.w}-{team.l}-{team.otl}
-          </div>
-        </div>
-        <div style={statCardStyle}>
-          <div style={statLabelStyle}>Buts pour</div>
-          <div style={statValueStyle}>{team.gf}</div>
-        </div>
-        <div style={statCardStyle}>
-          <div style={statLabelStyle}>Buts contre</div>
-          <div style={statValueStyle}>{team.ga}</div>
-        </div>
+        <StatCard
+          label="Fiche"
+          value={`${team.w}-${team.l}-${team.otl}`}
+          align="left"
+          padding={16}
+          valueFontSize={26}
+        />
+        <StatCard label="Buts pour" value={team.gf} align="left" padding={16} valueFontSize={26} />
+        <StatCard label="Buts contre" value={team.ga} align="left" padding={16} valueFontSize={26} />
       </div>
 
       <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>

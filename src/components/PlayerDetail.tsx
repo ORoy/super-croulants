@@ -1,77 +1,43 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useSheetData } from "../hooks/useSheetData";
+import { useSheetData, combineFetchStates } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
 import { playerTabs } from "../config/sheets";
 import { normalizeRow } from "../utils/normalizeRow";
 import { decodePlayerId } from "../utils/playerId";
+import { equalsIgnoreCase } from "../utils/textMatch";
 import { colors } from "../theme/tokens";
+import DetailPageStatus from "./DetailPageStatus";
+import StatCard from "./StatCard";
 
-const ERROR_COLOR = "oklch(0.65 0.16 25)";
-
-const SKATER_RANGE = playerTabs.find(tab => tab.label === "Saison Régulière")!.range;
-const PENALTY_RANGE = playerTabs.find(tab => tab.label === "Pénalités")!.range;
-const GOALIE_RANGE = playerTabs.find(tab => tab.label === "Gardiens")!.range;
+const SKATER_SHEET = playerTabs.find(tab => tab.label === "Saison Régulière")!;
+const PENALTY_SHEET = playerTabs.find(tab => tab.label === "Pénalités")!;
+const GOALIE_SHEET = playerTabs.find(tab => tab.label === "Gardiens")!;
 
 const matchesPlayer = (row: Record<string, string>, nameKey: string, teamKey: string, name: string, team: string) => {
-  if ((row[nameKey] ?? "").toLowerCase() !== name.toLowerCase()) {
+  if (!equalsIgnoreCase(row[nameKey] ?? "", name)) {
     return false;
   }
   if (!team) {
     return true;
   }
-  return (row[teamKey] ?? "").toLowerCase() === team.toLowerCase();
+  return equalsIgnoreCase(row[teamKey] ?? "", team);
 };
-
-const statCardStyle: CSSProperties = {
-  background: colors.cardBackground,
-  border: `1px solid ${colors.border}`,
-  borderRadius: 10,
-  padding: 14,
-  textAlign: "center",
-};
-
-const highlightCardStyle: CSSProperties = {
-  ...statCardStyle,
-  border: `1px solid ${colors.accent}`,
-};
-
-const statLabelStyle: CSSProperties = {
-  fontSize: 11,
-  letterSpacing: 1,
-  textTransform: "uppercase",
-  color: colors.mutedText,
-};
-
-const statValueStyle: CSSProperties = {
-  fontFamily: "'Barlow Condensed', sans-serif",
-  fontSize: 24,
-  fontWeight: 800,
-  marginTop: 4,
-};
-
-function StatCard({ label, value, highlight = false }: { label: string; value: string | number; highlight?: boolean }) {
-  return (
-    <div style={highlight ? highlightCardStyle : statCardStyle}>
-      <div style={statLabelStyle}>{label}</div>
-      <div style={statValueStyle}>{value}</div>
-    </div>
-  );
-}
 
 export default function PlayerDetail() {
   const { playerId = "" } = useParams<{ playerId: string }>();
   const navigate = useNavigate();
   const { name, team } = decodePlayerId(playerId);
 
-  const { data: skaterData, loading: skaterLoading, error: skaterError } = useSheetData(SKATER_RANGE);
-  const { data: penaltyData, loading: penaltyLoading, error: penaltyError } = useSheetData(PENALTY_RANGE);
-  const { data: goalieData, loading: goalieLoading, error: goalieError } = useSheetData(GOALIE_RANGE);
-  const { getTeamColor, loading: colorsLoading, error: colorsError } = useTeamColors();
+  const skaterResult = useSheetData(SKATER_SHEET);
+  const penaltyResult = useSheetData(PENALTY_SHEET);
+  const goalieResult = useSheetData(GOALIE_SHEET);
+  const teamColors = useTeamColors();
+  const { getTeamColor } = teamColors;
 
-  const skaterRows = useMemo(() => skaterData.map(normalizeRow), [skaterData]);
-  const penaltyRows = useMemo(() => penaltyData.map(normalizeRow), [penaltyData]);
-  const goalieRows = useMemo(() => goalieData.map(normalizeRow), [goalieData]);
+  const skaterRows = useMemo(() => skaterResult.data.map(normalizeRow), [skaterResult.data]);
+  const penaltyRows = useMemo(() => penaltyResult.data.map(normalizeRow), [penaltyResult.data]);
+  const goalieRows = useMemo(() => goalieResult.data.map(normalizeRow), [goalieResult.data]);
 
   const goalie = useMemo(
     () => goalieRows.find(row => matchesPlayer(row, "JOUEURS", "ÉQUIPE", name, team)),
@@ -86,8 +52,7 @@ export default function PlayerDetail() {
     [penaltyRows, name, team]
   );
 
-  const loading = skaterLoading || penaltyLoading || goalieLoading || colorsLoading;
-  const error = skaterError ?? penaltyError ?? goalieError ?? colorsError;
+  const { loading, error } = combineFetchStates(skaterResult, penaltyResult, goalieResult, teamColors);
   const player = goalie ?? skater;
   const playerTeam = goalie?.["ÉQUIPE"] ?? skater?.["ÉQUIPES"] ?? team;
   const teamColor = getTeamColor(playerTeam);
@@ -101,30 +66,14 @@ export default function PlayerDetail() {
     </div>
   );
 
-  if (loading) {
+  if (loading || error || !player) {
     return (
-      <div>
-        {backLink}
-        <div style={{ color: colors.mutedText }}>Chargement…</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div>
-        {backLink}
-        <div style={{ color: ERROR_COLOR }}>Erreur de chargement : {error}</div>
-      </div>
-    );
-  }
-
-  if (!player) {
-    return (
-      <div>
-        {backLink}
-        <div style={{ color: colors.mutedText }}>Joueur introuvable.</div>
-      </div>
+      <DetailPageStatus
+        backLink={backLink}
+        loading={loading}
+        error={error}
+        notFoundMessage={player ? undefined : "Joueur introuvable."}
+      />
     );
   }
 

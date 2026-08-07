@@ -7,10 +7,17 @@ export const SHEET_NAMES = {
   teamColors: "BD Site WEB",
 } as const;
 
-// Équipe, Couleur Fond, Couleur text — 4 rows, one per team.
-export const teamColorsRange = "A1:C5";
+// A range plus the sheet tab it lives on (sheetName defaults to
+// SHEET_NAMES.players when omitted, see sheetFetch.ts).
+export interface SheetRange {
+  range: string;
+  sheetName?: string;
+}
 
-export const playerTabs = [
+// Équipe, Couleur Fond, Couleur text — 4 rows, one per team.
+export const TEAM_COLORS_SHEET: SheetRange = { range: "A1:C5", sheetName: SHEET_NAMES.teamColors };
+
+export const playerTabs: (SheetRange & { label: string })[] = [
   { label: "Saison Régulière", range: "B2:I72" },
   { label: "Séries", range: "K2:R72" },
   { label: "Saison + Séries", range: "T2:AA72" },
@@ -21,7 +28,7 @@ export const playerTabs = [
   { label: "Moyenne pts/match", range: "BI2:BP17" },
 ];
 
-export const calendarTabs = [
-  { label: "Matchs", range: "B1:T37" },
-  { label: "Étoiles", range: "U4:AA37" },
+export const calendarTabs: (SheetRange & { label: string })[] = [
+  { label: "Matchs", range: "B1:T37", sheetName: SHEET_NAMES.calendar },
+  { label: "Étoiles", range: "U4:AA37", sheetName: SHEET_NAMES.calendar },
 ];
