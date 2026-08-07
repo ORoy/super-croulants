@@ -47,9 +47,11 @@ const TAB_ACTIVE_MOBILE: CSSProperties = {
 const logoStyle: CSSProperties = {
   width: 38,
   height: 38,
-  borderRadius: 8,
   flexShrink: 0,
-  background: `repeating-linear-gradient(45deg, ${colors.accent}, ${colors.accent} 4px, color-mix(in srgb, ${colors.accent} 25%, black) 4px, color-mix(in srgb, ${colors.accent} 25%, black) 8px)`,
+  border: `2px solid ${colors.accent}`,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 export default function Header() {
@@ -97,7 +99,19 @@ export default function Header() {
           }}
           onClick={() => handleNavigate("/leaderboard")}
         >
-          <div style={logoStyle} />
+          <div style={logoStyle}>
+            <span
+              style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 800,
+                fontSize: 16,
+                color: colors.accent,
+                letterSpacing: "0.5px",
+              }}
+            >
+              SC
+            </span>
+          </div>
           <div style={{ minWidth: 0 }}>
             <div
               style={{
