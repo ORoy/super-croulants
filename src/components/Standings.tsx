@@ -81,7 +81,7 @@ const STREAK_COLUMNS: ColumnDef[] = [
   },
   {
     key: "last10",
-    label: "10D",
+    label: "6D",
     width: "80px",
     render: t => <span style={{ color: colors.mutedText }}>{t.last10}</span>,
   },

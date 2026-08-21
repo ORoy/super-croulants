@@ -90,8 +90,8 @@ const computeStreak = (games: TeamGame[]): StreakInfo => {
   return { label: `${STREAK_PREFIX[last]}${count}`, color: STREAK_COLOR[last] };
 };
 
-const computeLast10 = (games: TeamGame[]): string => {
-  const recent = games.slice(-10);
+const computeLast6 = (games: TeamGame[]): string => {
+  const recent = games.slice(-6);
   const w = recent.filter(g => g.outcome === "W").length;
   const l = recent.filter(g => g.outcome === "L").length;
   const t = recent.filter(g => g.outcome === "T").length;
@@ -111,5 +111,5 @@ export const withStreaks = (
   teams.map(team => {
     const allGames = gameLogs.get(team.team) ?? [];
     const games = regularSeasonOnly ? allGames.filter(g => g.isRegularSeason) : allGames;
-    return { ...team, streak: computeStreak(games), last10: computeLast10(games) };
+    return { ...team, streak: computeStreak(games), last10: computeLast6(games) };
   });
