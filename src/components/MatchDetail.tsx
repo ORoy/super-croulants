@@ -70,19 +70,23 @@ export default function MatchDetail() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr auto 1fr",
+          gridTemplateColumns: "minmax(0,1fr) auto minmax(0,1fr)",
           alignItems: "center",
           gap: "clamp(8px,2vw,20px)",
           marginBottom: 28,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12, minWidth: 0 }}>
           <div
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
-              fontSize: 30,
+              fontSize: "clamp(16px,5vw,30px)",
               fontWeight: 800,
               textAlign: "right",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              minWidth: 0,
             }}
           >
             {match.awayTeam}
@@ -95,13 +99,24 @@ export default function MatchDetail() {
             fontSize: "clamp(28px,7vw,44px)",
             fontWeight: 800,
             color: match.played ? colors.accent : colors.primaryText,
+            whiteSpace: "nowrap",
           }}
         >
           {match.resultLabel}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
           <TeamLogo teamName={match.homeTeam} color={homeColor} size={40} />
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800 }}>
+          <div
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontSize: "clamp(16px,5vw,30px)",
+              fontWeight: 800,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              minWidth: 0,
+            }}
+          >
             {match.homeTeam}
           </div>
         </div>
