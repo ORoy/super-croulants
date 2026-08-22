@@ -14,7 +14,7 @@ export const SECTION_TITLES = {
 
 // Column indices within a team row (columns A onward). The sheet also has
 // 4 "V" (wins vs. each team, self shown as "---") columns after the total
-// wins column, plus periods (G/P/N), PBC and Total columns we don't surface.
+// wins column, plus periods (G/P/N) we don't surface.
 const COL = {
   rank: 0,
   team: 1,
@@ -26,6 +26,8 @@ const COL = {
   ga: 11,
   diff: 12,
   pts: 16,
+  pbc: 17,
+  total: 18,
 } as const;
 
 export interface TeamStanding {
@@ -39,6 +41,8 @@ export interface TeamStanding {
   gf: number;
   ga: number;
   diff: number;
+  pbc: number;
+  total: number;
 }
 
 const parseNumber = (value: string | undefined): number => {
@@ -74,6 +78,8 @@ export const parseStandingsSection = (rawRows: string[][], title: string): TeamS
       ga: parseNumber(row[COL.ga]),
       diff: parseNumber(row[COL.diff]),
       pts: parseNumber(row[COL.pts]),
+      pbc: parseNumber(row[COL.pbc]),
+      total: parseNumber(row[COL.total]),
     });
     rowIndex++;
   }

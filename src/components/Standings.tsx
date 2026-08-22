@@ -58,6 +58,8 @@ const RECORD_COLUMNS: ColumnDef[] = [
     render: t => <strong>{t.pts}</strong>,
     sortValue: t => t.pts,
   },
+  { key: "pbc", label: "PBC", width: "56px", render: t => t.pbc, sortValue: t => t.pbc },
+  { key: "total", label: "Total", width: "64px", render: t => t.total, sortValue: t => t.total },
   { key: "gf", label: "BP", width: "56px", render: t => t.gf, sortValue: t => t.gf },
   { key: "ga", label: "BC", width: "56px", render: t => t.ga, sortValue: t => t.ga },
   {
