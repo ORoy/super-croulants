@@ -103,13 +103,18 @@ export interface DisplayTeam extends TeamStanding {
   last10?: string;
 }
 
+export type SeasonFilter = "all" | "regular" | "series";
+
 export const withStreaks = (
   teams: TeamStanding[],
   gameLogs: Map<string, TeamGame[]>,
-  regularSeasonOnly: boolean
+  filter: SeasonFilter
 ): DisplayTeam[] =>
   teams.map(team => {
     const allGames = gameLogs.get(team.team) ?? [];
-    const games = regularSeasonOnly ? allGames.filter(g => g.isRegularSeason) : allGames;
+    const games =
+      filter === "all"
+        ? allGames
+        : allGames.filter(g => (filter === "regular" ? g.isRegularSeason : !g.isRegularSeason));
     return { ...team, streak: computeStreak(games), last10: computeLast6(games) };
   });

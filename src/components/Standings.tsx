@@ -93,7 +93,7 @@ const createColumns = (getTeamColor: (teamName: string) => TeamColor | undefined
   const teamCol = createTeamColumn(getTeamColor);
   return {
     full: [RANK_COL, teamCol, ...RECORD_COLUMNS, ...STREAK_COLUMNS],
-    recordOnly: [RANK_COL, teamCol, ...RECORD_COLUMNS],
+    recordWithStreak: [RANK_COL, teamCol, ...RECORD_COLUMNS, STREAK_COLUMNS[0]],
   };
 };
 
@@ -221,7 +221,7 @@ export default function Standings() {
   const teamColors = useTeamColors();
   const { getTeamColor } = teamColors;
 
-  const { full: FULL_COLUMNS, recordOnly: RECORD_ONLY_COLUMNS } = useMemo(
+  const { full: FULL_COLUMNS, recordWithStreak: RECORD_WITH_STREAK_COLUMNS } = useMemo(
     () => createColumns(getTeamColor),
     [getTeamColor]
   );
@@ -230,11 +230,7 @@ export default function Standings() {
 
   const overall = useMemo(
     () =>
-      withStreaks(
-        parseStandingsSection(standingsResult.data, SECTION_TITLES.overall),
-        gameLogs,
-        false
-      ),
+      withStreaks(parseStandingsSection(standingsResult.data, SECTION_TITLES.overall), gameLogs, "all"),
     [standingsResult.data, gameLogs]
   );
   const regular = useMemo(
@@ -242,13 +238,18 @@ export default function Standings() {
       withStreaks(
         parseStandingsSection(standingsResult.data, SECTION_TITLES.regular),
         gameLogs,
-        true
+        "regular"
       ),
     [standingsResult.data, gameLogs]
   );
   const series = useMemo(
-    () => parseStandingsSection(standingsResult.data, SECTION_TITLES.series),
-    [standingsResult.data]
+    () =>
+      withStreaks(
+        parseStandingsSection(standingsResult.data, SECTION_TITLES.series),
+        gameLogs,
+        "series"
+      ),
+    [standingsResult.data, gameLogs]
   );
 
   const { loading, error } = combineFetchStates(standingsResult, matchesResult, teamColors);
@@ -271,7 +272,7 @@ export default function Standings() {
         <>
           <StandingsSection title="Saison + Séries" columns={FULL_COLUMNS} teams={overall} />
           <StandingsSection title="Saison Régulière" columns={FULL_COLUMNS} teams={regular} />
-          <StandingsSection title="Séries" columns={RECORD_ONLY_COLUMNS} teams={series} />
+          <StandingsSection title="Séries" columns={RECORD_WITH_STREAK_COLUMNS} teams={series} />
         </>
       )}
     </div>
