@@ -7,6 +7,7 @@ import { playerTabs } from "../config/sheets";
 import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
 import { normalizeRow } from "../utils/normalizeRow";
 import { equalsIgnoreCase } from "../utils/textMatch";
+import { encodePlayerId } from "../utils/playerId";
 import { colors } from "../theme/tokens";
 import DetailPageStatus from "./DetailPageStatus";
 import StatCard from "./StatCard";
@@ -111,7 +112,16 @@ export default function TeamDetail() {
       {roster.length === 0 ? (
         <div style={{ color: colors.mutedText }}>Aucun joueur trouvé pour cette équipe.</div>
       ) : (
-        <StatTable key={decodedTeamId} columns={ROSTER_COLUMNS} rows={roster} />
+        <StatTable
+          key={decodedTeamId}
+          columns={ROSTER_COLUMNS}
+          rows={roster}
+          onRowClick={row => {
+            const name = row["JOUEURS"];
+            if (!name) return;
+            navigate(`/leaderboard/${encodePlayerId(name, decodedTeamId)}`);
+          }}
+        />
       )}
     </div>
   );

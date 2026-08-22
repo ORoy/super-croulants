@@ -113,7 +113,12 @@ export default function PlayerDetail() {
             {name}
           </div>
           <div style={{ fontSize: 14, color: colors.mutedText, marginTop: 6 }}>
-            {playerTeam}
+            <span
+              onClick={() => navigate(`/teams/${encodeURIComponent(playerTeam)}`)}
+              style={{ cursor: "pointer" }}
+            >
+              {playerTeam}
+            </span>
             {goalie ? " · Gardien" : ""}
           </div>
         </div>
@@ -188,7 +193,10 @@ export default function PlayerDetail() {
                   }}
                 >
                   <div style={{ color: colors.mutedText }}>{row.date}</div>
-                  <div>
+                  <div
+                    onClick={() => navigate(`/teams/${encodeURIComponent(row.opponent)}`)}
+                    style={{ cursor: "pointer" }}
+                  >
                     {row.isHome ? "vs " : "@ "}
                     {row.opponent}
                   </div>

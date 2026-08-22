@@ -1,9 +1,11 @@
 import { useMemo, type CSSProperties } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSheetRawData } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
 import { LIVE_MATCH_SHEET } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { parseLiveGames, computeStandouts, type LiveGame, type LiveStandout } from "../utils/liveMatches";
+import { encodePlayerId } from "../utils/playerId";
 import TeamLogo from "./TeamLogo";
 
 const POLL_INTERVAL_MS = 30_000;
@@ -36,10 +38,13 @@ interface LiveGameCardProps {
 }
 
 function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
+  const navigate = useNavigate();
   const standouts = useMemo(
     () => computeStandouts(game.home, game.away, game.home.name, game.away.name),
     [game]
   );
+
+  const goToTeam = (team: string) => () => navigate(`/teams/${encodeURIComponent(team)}`);
 
   const awayColor = getTeamColor(game.away.name);
   const homeColor = getTeamColor(game.home.name);
@@ -82,6 +87,7 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12, minWidth: 0 }}>
             <div
+              onClick={goToTeam(game.away.name)}
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontSize: "clamp(16px,5vw,30px)",
@@ -91,6 +97,7 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 minWidth: 0,
+                cursor: "pointer",
               }}
             >
               {game.away.name}
@@ -111,6 +118,7 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
             <TeamLogo teamName={game.home.name} color={homeColor} size={40} />
             <div
+              onClick={goToTeam(game.home.name)}
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontSize: "clamp(16px,5vw,30px)",
@@ -119,6 +127,7 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 minWidth: 0,
+                cursor: "pointer",
               }}
             >
               {game.home.name}
@@ -150,9 +159,13 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
             borderBottom: `1px solid ${colors.border}`,
           }}
         >
-          <div>{game.away.name}</div>
+          <div onClick={goToTeam(game.away.name)} style={{ cursor: "pointer" }}>
+            {game.away.name}
+          </div>
           <div style={{ textAlign: "center" }}>Stat</div>
-          <div style={{ textAlign: "right" }}>{game.home.name}</div>
+          <div onClick={goToTeam(game.home.name)} style={{ textAlign: "right", cursor: "pointer" }}>
+            {game.home.name}
+          </div>
         </div>
         <div
           style={{
@@ -202,11 +215,23 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
               <div style={{ fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: colors.mutedText }}>
                 Meneur
               </div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 800, marginTop: 4 }}>
+              <div
+                onClick={() => navigate(`/leaderboard/${encodePlayerId(standout.name, standout.teamName)}`)}
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 20,
+                  fontWeight: 800,
+                  marginTop: 4,
+                  cursor: "pointer",
+                }}
+              >
                 {standout.name}
               </div>
               <div style={{ fontSize: 13, color: colors.mutedText, marginTop: 2 }}>
-                {standout.teamName} · {standoutNote(standout)}
+                <span onClick={goToTeam(standout.teamName)} style={{ cursor: "pointer" }}>
+                  {standout.teamName}
+                </span>{" "}
+                · {standoutNote(standout)}
               </div>
             </div>
           ))}

@@ -7,6 +7,7 @@ import { transformMatches } from "../utils/matches";
 import { findStarsForDate } from "../utils/stars";
 import { parseLiveGames, findFinishedGame, periodScores } from "../utils/liveMatches";
 import { colors } from "../theme/tokens";
+import { encodePlayerId } from "../utils/playerId";
 import DetailPageStatus from "./DetailPageStatus";
 import TeamLogo from "./TeamLogo";
 
@@ -92,6 +93,7 @@ export default function MatchDetail() {
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12, minWidth: 0 }}>
           <div
+            onClick={() => navigate(`/teams/${encodeURIComponent(match.awayTeam)}`)}
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontSize: "clamp(16px,5vw,30px)",
@@ -101,6 +103,7 @@ export default function MatchDetail() {
               overflow: "hidden",
               textOverflow: "ellipsis",
               minWidth: 0,
+              cursor: "pointer",
             }}
           >
             {match.awayTeam}
@@ -122,6 +125,7 @@ export default function MatchDetail() {
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
           <TeamLogo teamName={match.homeTeam} color={homeColor} size={40} />
           <div
+            onClick={() => navigate(`/teams/${encodeURIComponent(match.homeTeam)}`)}
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontSize: "clamp(16px,5vw,30px)",
@@ -130,6 +134,7 @@ export default function MatchDetail() {
               overflow: "hidden",
               textOverflow: "ellipsis",
               minWidth: 0,
+              cursor: "pointer",
             }}
           >
             {match.homeTeam}
@@ -208,7 +213,12 @@ export default function MatchDetail() {
                 borderBottom: "1px solid oklch(0.23 0.02 250)",
               }}
             >
-              <div style={{ fontWeight: 600 }}>{match.awayTeam}</div>
+              <div
+                onClick={() => navigate(`/teams/${encodeURIComponent(match.awayTeam)}`)}
+                style={{ fontWeight: 600, cursor: "pointer" }}
+              >
+                {match.awayTeam}
+              </div>
               {periods.map(p => (
                 <div key={p.period} style={p.away > p.home ? periodWinStyle : undefined}>
                   {p.away}
@@ -227,7 +237,12 @@ export default function MatchDetail() {
                 alignItems: "center",
               }}
             >
-              <div style={{ fontWeight: 600 }}>{match.homeTeam}</div>
+              <div
+                onClick={() => navigate(`/teams/${encodeURIComponent(match.homeTeam)}`)}
+                style={{ fontWeight: 600, cursor: "pointer" }}
+              >
+                {match.homeTeam}
+              </div>
               {periods.map(p => (
                 <div key={p.period} style={p.home > p.away ? periodWinStyle : undefined}>
                   {p.home}
@@ -261,11 +276,26 @@ export default function MatchDetail() {
               >
                 Étoile {star.star}
               </div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 800, marginTop: 4 }}>
+              <div
+                onClick={() => navigate(`/leaderboard/${encodePlayerId(star.name, star.team)}`)}
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 20,
+                  fontWeight: 800,
+                  marginTop: 4,
+                  cursor: "pointer",
+                }}
+              >
                 {star.name}
               </div>
               <div style={{ fontSize: 13, color: colors.mutedText, marginTop: 2 }}>
-                #{star.number} · {star.team}
+                #{star.number} ·{" "}
+                <span
+                  onClick={() => navigate(`/teams/${encodeURIComponent(star.team)}`)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {star.team}
+                </span>
               </div>
             </div>
           ))}
