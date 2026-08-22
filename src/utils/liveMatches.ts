@@ -180,6 +180,39 @@ export const parseLiveGames = (rows: string[][]): LiveGame[] => {
   return games;
 };
 
+// Finds a completed game's `Feuilles de match` block for Match Detail's
+// "Score by Period" table (ticket 09), matching Calendrier's "Matchs" data
+// (date + team names) to the corresponding scoresheet block.
+export const findFinishedGame = (
+  games: LiveGame[],
+  date: string,
+  awayTeam: string,
+  homeTeam: string
+): LiveGame | undefined =>
+  games.find(
+    game =>
+      game.isFinished &&
+      game.date === date &&
+      game.away.name === awayTeam &&
+      game.home.name === homeTeam
+  );
+
+export interface PeriodScoreRow {
+  period: number;
+  away: number;
+  home: number;
+}
+
+// Period-by-period goal counts, derived from the `Période` value already
+// logged on every goal entry in `Pointage` — no separate period-score field
+// exists in the sheet.
+export const periodScores = (game: LiveGame): PeriodScoreRow[] =>
+  [1, 2, 3].map(period => ({
+    period,
+    away: game.away.goals.filter(g => g.period === period).length,
+    home: game.home.goals.filter(g => g.period === period).length,
+  }));
+
 const bumpStandout = (
   map: Map<string, LiveStandout>,
   name: string,

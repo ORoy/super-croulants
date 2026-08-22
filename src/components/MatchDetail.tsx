@@ -2,9 +2,10 @@ import { useMemo, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
-import { calendarTabs } from "../config/sheets";
+import { calendarTabs, LIVE_MATCH_SHEET } from "../config/sheets";
 import { transformMatches } from "../utils/matches";
 import { findStarsForDate } from "../utils/stars";
+import { parseLiveGames, findFinishedGame, periodScores } from "../utils/liveMatches";
 import { colors } from "../theme/tokens";
 import DetailPageStatus from "./DetailPageStatus";
 import TeamLogo from "./TeamLogo";
@@ -23,6 +24,7 @@ export default function MatchDetail() {
 
   const matchesResult = useSheetRawData(calendarTabs[0]);
   const starsResult = useSheetRawData(calendarTabs[1]);
+  const matchSheetResult = useSheetRawData(LIVE_MATCH_SHEET);
   const teamColors = useTeamColors();
   const { getTeamColor } = teamColors;
 
@@ -36,7 +38,14 @@ export default function MatchDetail() {
     [starsResult.data, match]
   );
 
-  const { loading, error } = combineFetchStates(matchesResult, starsResult, teamColors);
+  const periods = useMemo(() => {
+    if (!match || !match.played) return null;
+    const games = parseLiveGames(matchSheetResult.data);
+    const game = findFinishedGame(games, match.date, match.awayTeam, match.homeTeam);
+    return game ? periodScores(game) : null;
+  }, [matchSheetResult.data, match]);
+
+  const { loading, error } = combineFetchStates(matchesResult, starsResult, matchSheetResult, teamColors);
 
   const backLink = (
     <div
@@ -121,6 +130,77 @@ export default function MatchDetail() {
           </div>
         </div>
       </div>
+
+      {periods && (
+        <>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>
+            Pointage par période
+          </div>
+          <div
+            style={{
+              background: colors.cardBackground,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 10,
+              overflowX: "auto",
+              marginBottom: 28,
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "2fr repeat(3, 70px) 70px",
+                minWidth: 460,
+                padding: "10px 16px",
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 12,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                color: colors.mutedText,
+                borderBottom: `1px solid ${colors.border}`,
+              }}
+            >
+              <div>Équipe</div>
+              <div>1re</div>
+              <div>2e</div>
+              <div>3e</div>
+              <div>Final</div>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "2fr repeat(3, 70px) 70px",
+                minWidth: 460,
+                padding: "11px 16px",
+                fontSize: 14,
+                alignItems: "center",
+                borderBottom: "1px solid oklch(0.23 0.02 250)",
+              }}
+            >
+              <div style={{ fontWeight: 600 }}>{match.awayTeam}</div>
+              {periods.map(p => (
+                <div key={p.period}>{p.away}</div>
+              ))}
+              <div style={{ fontWeight: 700 }}>{match.awayScore}</div>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "2fr repeat(3, 70px) 70px",
+                minWidth: 460,
+                padding: "11px 16px",
+                fontSize: 14,
+                alignItems: "center",
+              }}
+            >
+              <div style={{ fontWeight: 600 }}>{match.homeTeam}</div>
+              {periods.map(p => (
+                <div key={p.period}>{p.home}</div>
+              ))}
+              <div style={{ fontWeight: 700 }}>{match.homeScore}</div>
+            </div>
+          </div>
+        </>
+      )}
 
       <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>
         Étoiles du match
