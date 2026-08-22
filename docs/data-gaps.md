@@ -18,11 +18,13 @@ Le site voudrait afficher la position de chaque joueur (centre, ailier gauche/dr
 
 **Recommandation** : ajouter une colonne `Position` à la zone de liste de joueurs de base de l'onglet `Classement Joueurs 2025-26`. Même une étiquette générale G/D/A suffirait à débloquer la colonne « Pos » actuellement absente du tableau des meneurs et des listes d'équipe.
 
-## 4. Journal des matchs par joueur (historique partie par partie) — en attente, priorité basse (ticket 12)
+## 4. Journal des matchs par joueur (historique partie par partie) — PARTIELLEMENT RÉSOLU (ticket 12)
 
-Sur la page de détail d'un joueur, le site voudrait afficher l'historique partie par partie (buts, aides, points, +/- par match). L'onglet `Feuilles de match` est une mise en page destinée à l'impression, pas une ligne par joueur par match — il n'est pas exploitable directement pour reconstituer cet historique sans un travail d'extraction conséquent (croiser, pour chaque bloc de partie, les rangées d'alignement avec le journal des buts/aides). Ce travail n'est pas jugé rentable pour l'instant.
+Correction (2026-08-21) : le déclencheur de réévaluation prévu par le ticket 12 s'est produit — les tickets 08/09 ont construit un analyseur réutilisable de `Feuilles de match` (alignement + journal des buts par bloc de partie). Buts/aides/points par match sont maintenant affichés sur la page de détail d'un joueur (`Journal des matchs`), dérivés de ce même analyseur, sans nouvel onglet.
 
-**Recommandation (inchangée)** : créer un onglet dédié (par exemple `Journal des matchs`), une ligne par joueur par match, avec au minimum : date, adversaire, buts, aides, +/-. Voir `.scratch/hockey-rankings-redesign/issues/12-player-game-log-request.md`.
+Le +/- reste hors de portée : `Feuilles de match` ne consigne que le buteur et les assistants de chaque but, pas les joueurs sur la glace — aucune source n'existe pour ce calcul sans un nouvel onglet dédié.
+
+**Recommandation (mise à jour)** : le +/- nécessite toujours un onglet dédié (par exemple `Journal des matchs`, une ligne par joueur par match) alimenté manuellement, ou un suivi des joueurs sur la glace qui n'existe pas aujourd'hui. Voir `.scratch/hockey-rankings-redesign/issues/12-player-game-log-request.md`.
 
 ## 5. Colonne « PBC » (points bonis) — en développement (ticket 10)
 

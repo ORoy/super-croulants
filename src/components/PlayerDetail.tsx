@@ -1,14 +1,17 @@
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useSheetData, combineFetchStates } from "../hooks/useSheetData";
+import { useSheetData, useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
-import { playerTabs } from "../config/sheets";
+import { playerTabs, LIVE_MATCH_SHEET } from "../config/sheets";
 import { normalizeRow } from "../utils/normalizeRow";
 import { decodePlayerId } from "../utils/playerId";
 import { equalsIgnoreCase } from "../utils/textMatch";
+import { parseLiveGames, playerGameLog } from "../utils/liveMatches";
 import { colors } from "../theme/tokens";
 import DetailPageStatus from "./DetailPageStatus";
 import StatCard from "./StatCard";
+
+const GAME_LOG_GRID_COLUMNS = "1fr 2fr 50px 50px 50px";
 
 const SKATER_SHEET = playerTabs.find(tab => tab.label === "Saison Régulière")!;
 const PENALTY_SHEET = playerTabs.find(tab => tab.label === "Pénalités")!;
@@ -32,6 +35,7 @@ export default function PlayerDetail() {
   const skaterResult = useSheetData(SKATER_SHEET);
   const penaltyResult = useSheetData(PENALTY_SHEET);
   const goalieResult = useSheetData(GOALIE_SHEET);
+  const matchSheetResult = useSheetRawData(LIVE_MATCH_SHEET);
   const teamColors = useTeamColors();
   const { getTeamColor } = teamColors;
 
@@ -56,6 +60,13 @@ export default function PlayerDetail() {
   const player = goalie ?? skater;
   const playerTeam = goalie?.["ÉQUIPE"] ?? skater?.["ÉQUIPES"] ?? team;
   const teamColor = getTeamColor(playerTeam);
+
+  // Skaters only — G/A/PTS per game, reusing the "Feuilles de match" parser
+  // built for tickets 08/09 (ticket 12). +/- has no source in that sheet.
+  const gameLog = useMemo(
+    () => (skater ? playerGameLog(parseLiveGames(matchSheetResult.data), name, playerTeam) : []),
+    [skater, matchSheetResult.data, name, playerTeam]
+  );
 
   const backLink = (
     <div
@@ -124,6 +135,71 @@ export default function PlayerDetail() {
           <StatCard label="Points" value={skater?.["PTS"] ?? "—"} highlight />
           <StatCard label="Pénalités (min)" value={penalty?.["TOTAL (min)"] ?? "0"} />
         </div>
+      )}
+
+      {skater && gameLog.length > 0 && (
+        <>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>
+            Journal des matchs
+          </div>
+          <div
+            style={{
+              background: colors.cardBackground,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 10,
+              overflowX: "auto",
+              maxHeight: 480,
+              overflowY: "auto",
+            }}
+          >
+            <div style={{ minWidth: 380 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: GAME_LOG_GRID_COLUMNS,
+                  padding: "10px 16px",
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 12,
+                  letterSpacing: 1,
+                  textTransform: "uppercase",
+                  color: colors.mutedText,
+                  borderBottom: `1px solid ${colors.border}`,
+                  position: "sticky",
+                  top: 0,
+                  background: colors.cardBackground,
+                }}
+              >
+                <div>Date</div>
+                <div>Adversaire</div>
+                <div>B</div>
+                <div>A</div>
+                <div>PTS</div>
+              </div>
+              {gameLog.map(row => (
+                <div
+                  key={row.gameId}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: GAME_LOG_GRID_COLUMNS,
+                    padding: "9px 16px",
+                    fontSize: 14,
+                    alignItems: "center",
+                    borderBottom: "1px solid oklch(0.23 0.02 250)",
+                  }}
+                >
+                  <div style={{ color: colors.mutedText }}>{row.date}</div>
+                  <div>
+                    {row.isHome ? "vs " : "@ "}
+                    {row.opponent}
+                  </div>
+                  <div>{row.goals}</div>
+                  <div>{row.assists}</div>
+                  <div style={{ fontWeight: 700, color: colors.accent }}>{row.points}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

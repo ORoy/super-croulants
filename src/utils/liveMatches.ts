@@ -1,3 +1,5 @@
+import { equalsIgnoreCase } from "./textMatch";
+
 // Parses "Feuilles de match" — a per-game scoresheet layout, one 20-row
 // block per game. Each block holds two team sub-blocks side by side: the
 // home team at column offset 0, the visiting team at column offset 83
@@ -70,6 +72,16 @@ export interface LiveGame {
   period: number | null;
   isInProgress: boolean;
   isFinished: boolean;
+}
+
+export interface PlayerGameLogRow {
+  gameId: string;
+  date: string;
+  opponent: string;
+  isHome: boolean;
+  goals: number;
+  assists: number;
+  points: number;
 }
 
 const cellAt = (block: string[][], row: number, colOffset: number, col: number): string =>
@@ -248,4 +260,41 @@ export const computeStandouts = (home: LiveTeam, away: LiveTeam, homeName: strin
   return [...map.values()]
     .sort((a, b) => b.goals + b.assists - (a.goals + a.assists) || b.goals - a.goals)
     .slice(0, 2);
+};
+
+// Per-game G/A/PTS history (ticket 12), reusing the roster + goals already
+// parsed for tickets 08/09 — no separate per-player-per-game sheet needed.
+// +/- has no source here (no on-ice tracking, only scorer/assist per goal)
+// and stays out; see docs/data-gaps.md item 4.
+export const playerGameLog = (games: LiveGame[], playerName: string, playerTeam: string): PlayerGameLogRow[] => {
+  const rows: PlayerGameLogRow[] = [];
+
+  for (const game of games) {
+    if (!game.isFinished) continue;
+
+    for (const [team, opponent, isHome] of [
+      [game.home, game.away, true],
+      [game.away, game.home, false],
+    ] as const) {
+      if (!equalsIgnoreCase(team.name, playerTeam)) continue;
+
+      const number = [...team.roster.entries()].find(([, name]) => equalsIgnoreCase(name, playerName))?.[0];
+      if (number === undefined) continue;
+
+      const goals = team.goals.filter(g => g.scorerNumber === number).length;
+      const assists = team.goals.filter(g => g.assistNumbers.includes(number)).length;
+
+      rows.push({
+        gameId: game.id,
+        date: game.date,
+        opponent: opponent.name,
+        isHome,
+        goals,
+        assists,
+        points: goals + assists,
+      });
+    }
+  }
+
+  return rows;
 };
