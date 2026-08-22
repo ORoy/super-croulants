@@ -5,6 +5,7 @@ export const SHEET_NAMES = {
   calendar: "Calendrier/Résultats/Étoiles 2025-26",
   standings: "Classement Saison Régulière 2025-26",
   teamColors: "BD Site WEB",
+  matchSheets: "Feuilles de match",
 } as const;
 
 // A range plus the sheet tab it lives on (sheetName defaults to
@@ -32,3 +33,8 @@ export const calendarTabs: (SheetRange & { label: string })[] = [
   { label: "Matchs", range: "B1:T37", sheetName: SHEET_NAMES.calendar },
   { label: "Étoiles", range: "U4:AA37", sheetName: SHEET_NAMES.calendar },
 ];
+
+// One 20-row block per game (home team at columns A-Q, visiting team at the
+// same layout shifted to CF-CV — see src/utils/liveMatches.ts). 1140 rows
+// covers the sheet's full season + séries block count.
+export const LIVE_MATCH_SHEET: SheetRange = { range: "A1:CV1140", sheetName: SHEET_NAMES.matchSheets };

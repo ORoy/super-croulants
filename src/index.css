@@ -14,3 +14,13 @@ body {
   background: oklch(0.32 0.02 250);
   border-radius: 4px;
 }
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}

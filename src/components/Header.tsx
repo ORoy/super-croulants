@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { label: "Joueurs", path: "/leaderboard" },
   { label: "Équipes", path: "/teams" },
   { label: "Calendrier", path: "/calendar" },
+  { label: "En direct", path: "/live" },
 ];
 
 const TAB_BASE: CSSProperties = {

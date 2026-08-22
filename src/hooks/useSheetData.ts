@@ -23,7 +23,8 @@ export function combineFetchStates(
 function useSheetFetch<T>(
   fetcher: (apiKey: string) => Promise<T>,
   initialValue: T,
-  deps: unknown[]
+  deps: unknown[],
+  refetchIntervalMs?: number
 ): UseFetchResult<T> {
   const [data, setData] = useState<T>(initialValue);
   const [loading, setLoading] = useState(true);
@@ -32,21 +33,43 @@ function useSheetFetch<T>(
   const apiKey = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY;
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+    let cancelled = false;
 
-    fetcher(apiKey)
-      .then(result => {
-        setData(result);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setError(err.message);
-        setLoading(false);
-      });
+    // Polling refetches keep any previously loaded data on screen instead of
+    // flashing back to a loading state every interval tick.
+    const load = (showLoading: boolean) => {
+      if (showLoading) setLoading(true);
+      setError(null);
+
+      fetcher(apiKey)
+        .then(result => {
+          if (cancelled) return;
+          setData(result);
+          setLoading(false);
+        })
+        .catch(err => {
+          if (cancelled) return;
+          console.error(err);
+          setError(err.message);
+          setLoading(false);
+        });
+    };
+
+    load(true);
+
+    if (!refetchIntervalMs) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const intervalId = setInterval(() => load(false), refetchIntervalMs);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKey, ...deps]);
+  }, [apiKey, refetchIntervalMs, ...deps]);
 
   return { data, loading, error };
 }
@@ -57,8 +80,13 @@ export const useSheetData = ({ range, sheetName }: SheetRange): UseFetchResult<R
     sheetName,
   ]);
 
-export const useSheetRawData = ({ range, sheetName }: SheetRange): UseFetchResult<string[][]> =>
-  useSheetFetch(apiKey => fetchSheetRawData(range, apiKey, sheetName), [], [
-    range,
-    sheetName,
-  ]);
+export const useSheetRawData = (
+  { range, sheetName }: SheetRange,
+  refetchIntervalMs?: number
+): UseFetchResult<string[][]> =>
+  useSheetFetch(
+    apiKey => fetchSheetRawData(range, apiKey, sheetName),
+    [],
+    [range, sheetName],
+    refetchIntervalMs
+  );

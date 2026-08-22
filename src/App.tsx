@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header";
 import Leaderboard from "./components/Leaderboard";
 import Calendar from "./components/Calendar";
+import Live from "./components/Live";
 import Standings from "./components/Standings";
 import Teams from "./components/Teams";
 import TeamDetail from "./components/TeamDetail";
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/teams/:teamId" element={<TeamDetail />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/calendar/:matchId" element={<MatchDetail />} />
+            <Route path="/live" element={<Live />} />
             <Route path="/players/*" element={<Navigate to="/leaderboard" replace />} />
             <Route path="*" element={<Navigate to="/leaderboard" replace />} />
           </Routes>
