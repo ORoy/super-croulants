@@ -8,8 +8,10 @@ export interface Match {
   date: string;
   awayTeam: string;
   awayScore: number | null;
+  awayPtsFS: number | null;
   homeTeam: string;
   homeScore: number | null;
+  homePtsFS: number | null;
   played: boolean;
   status: string;
   resultLabel: string;
@@ -37,6 +39,8 @@ const buildMatch = (values: string[], id: string): Match | null => {
 
   const awayScore = parseScore(values[4]);
   const homeScore = parseScore(values[8]);
+  const awayPtsFS = parseScore(values[3]);
+  const homePtsFS = parseScore(values[9]);
   const played = awayScore !== null && homeScore !== null;
 
   return {
@@ -44,8 +48,10 @@ const buildMatch = (values: string[], id: string): Match | null => {
     date,
     awayTeam,
     awayScore,
+    awayPtsFS,
     homeTeam,
     homeScore,
+    homePtsFS,
     played,
     status: played ? "Final" : "À venir",
     resultLabel: played ? `${awayScore} – ${homeScore}` : "vs",

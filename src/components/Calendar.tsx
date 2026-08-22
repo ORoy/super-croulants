@@ -29,6 +29,8 @@ function MatchRow({ match, isMobile, accentResult = false, onClick }: MatchRowPr
     color: accentResult ? colors.accent : colors.primaryText,
   };
 
+  const hasPtsFS = match.played && match.awayPtsFS !== null && match.homePtsFS !== null;
+
   if (isMobile) {
     return (
       <div
@@ -60,8 +62,13 @@ function MatchRow({ match, isMobile, accentResult = false, onClick }: MatchRowPr
           >
             {match.awayTeam}
           </div>
-          <div style={{ ...resultStyle, fontSize: accentResult ? 16 : 17, flexShrink: 0 }}>
-            {match.resultLabel}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: 1 }}>
+            <div style={{ ...resultStyle, fontSize: accentResult ? 16 : 17 }}>{match.resultLabel}</div>
+            {hasPtsFS && (
+              <div style={{ fontSize: 10, color: colors.mutedText, whiteSpace: "nowrap" }}>
+                {match.awayPtsFS} – {match.homePtsFS}
+              </div>
+            )}
           </div>
           <div
             style={{
@@ -97,7 +104,14 @@ function MatchRow({ match, isMobile, accentResult = false, onClick }: MatchRowPr
     >
       <div style={{ fontSize: 13, color: colors.mutedText }}>{match.date}</div>
       <div style={{ fontWeight: 600, textAlign: "right" }}>{match.awayTeam}</div>
-      <div style={{ ...resultStyle, padding: "0 8px" }}>{match.resultLabel}</div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 8px", gap: 1 }}>
+        <div style={resultStyle}>{match.resultLabel}</div>
+        {hasPtsFS && (
+          <div style={{ fontSize: 10, color: colors.mutedText, whiteSpace: "nowrap" }}>
+            {match.awayPtsFS} – {match.homePtsFS}
+          </div>
+        )}
+      </div>
       <div style={{ fontWeight: 600 }}>{match.homeTeam}</div>
       <div style={{ ...mutedLabelStyle, textAlign: "right" }}>{match.status}</div>
     </div>

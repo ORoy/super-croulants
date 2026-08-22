@@ -18,6 +18,11 @@ const starCardStyle: CSSProperties = {
   textAlign: "left",
 };
 
+const periodWinStyle: CSSProperties = {
+  color: colors.accent,
+  fontWeight: 700,
+};
+
 export default function MatchDetail() {
   const { matchId = "" } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
@@ -104,6 +109,7 @@ export default function MatchDetail() {
         </div>
         <div
           style={{
+            justifySelf: "center",
             fontFamily: "'Barlow Condensed', sans-serif",
             fontSize: "clamp(28px,7vw,44px)",
             fontWeight: 800,
@@ -131,6 +137,31 @@ export default function MatchDetail() {
         </div>
       </div>
 
+      {match.played && match.awayPtsFS !== null && match.homePtsFS !== null && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: -20, marginBottom: 28 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 12,
+              padding: "6px 14px",
+              background: colors.background,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span style={{ fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: colors.mutedText }}>
+              Formule Score
+            </span>
+            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 800, lineHeight: 1 }}>
+              {match.awayPtsFS} – {match.homePtsFS}
+            </span>
+          </div>
+        </div>
+      )}
+
       {periods && (
         <>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>
@@ -148,8 +179,8 @@ export default function MatchDetail() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "2fr repeat(3, 70px) 70px",
-                minWidth: 460,
+                gridTemplateColumns: "2fr repeat(3, 70px) 70px 130px",
+                minWidth: 590,
                 padding: "10px 16px",
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontSize: 12,
@@ -164,12 +195,13 @@ export default function MatchDetail() {
               <div>2e</div>
               <div>3e</div>
               <div>Final</div>
+              <div>Formule Score</div>
             </div>
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "2fr repeat(3, 70px) 70px",
-                minWidth: 460,
+                gridTemplateColumns: "2fr repeat(3, 70px) 70px 130px",
+                minWidth: 590,
                 padding: "11px 16px",
                 fontSize: 14,
                 alignItems: "center",
@@ -178,15 +210,18 @@ export default function MatchDetail() {
             >
               <div style={{ fontWeight: 600 }}>{match.awayTeam}</div>
               {periods.map(p => (
-                <div key={p.period}>{p.away}</div>
+                <div key={p.period} style={p.away > p.home ? periodWinStyle : undefined}>
+                  {p.away}
+                </div>
               ))}
               <div style={{ fontWeight: 700 }}>{match.awayScore}</div>
+              <div style={{ fontWeight: 700 }}>{match.awayPtsFS ?? "–"}</div>
             </div>
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "2fr repeat(3, 70px) 70px",
-                minWidth: 460,
+                gridTemplateColumns: "2fr repeat(3, 70px) 70px 130px",
+                minWidth: 590,
                 padding: "11px 16px",
                 fontSize: 14,
                 alignItems: "center",
@@ -194,9 +229,12 @@ export default function MatchDetail() {
             >
               <div style={{ fontWeight: 600 }}>{match.homeTeam}</div>
               {periods.map(p => (
-                <div key={p.period}>{p.home}</div>
+                <div key={p.period} style={p.home > p.away ? periodWinStyle : undefined}>
+                  {p.home}
+                </div>
               ))}
               <div style={{ fontWeight: 700 }}>{match.homeScore}</div>
+              <div style={{ fontWeight: 700 }}>{match.homePtsFS ?? "–"}</div>
             </div>
           </div>
         </>
