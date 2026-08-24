@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import StatTable, { type TableColumn } from "./StatTable";
 import { useSheetRawData, useSheetData, combineFetchStates } from "../hooks/useSheetData";
+import { useSheetBatch, type BatchRange } from "../hooks/useSheetBatch";
 import { useTeamColors } from "../hooks/useTeamColors";
 import { playerTabs } from "../config/sheets";
 import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
@@ -14,6 +15,7 @@ import StatCard from "./StatCard";
 import TeamLogo from "./TeamLogo";
 
 const ROSTER_SHEET = playerTabs.find(tab => tab.label === "Saison Régulière")!;
+const TEAM_DETAIL_RANGES: BatchRange[] = [STANDINGS_SHEET, { ...ROSTER_SHEET, kind: "parsed" }];
 
 const ROSTER_COLUMNS: TableColumn[] = [
   { key: "RANG", label: "RANG" },
@@ -30,6 +32,7 @@ export default function TeamDetail() {
   const navigate = useNavigate();
   const decodedTeamId = decodeURIComponent(teamId);
 
+  useSheetBatch(TEAM_DETAIL_RANGES);
   const standingsResult = useSheetRawData(STANDINGS_SHEET);
   const rosterResult = useSheetData(ROSTER_SHEET);
   const teamColors = useTeamColors();

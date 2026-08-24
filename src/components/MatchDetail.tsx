@@ -1,6 +1,7 @@
 import { useMemo, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
+import { useSheetBatch } from "../hooks/useSheetBatch";
 import { useTeamColors } from "../hooks/useTeamColors";
 import { calendarTabs, LIVE_MATCH_SHEET } from "../config/sheets";
 import { transformMatches } from "../utils/matches";
@@ -24,10 +25,13 @@ const periodWinStyle: CSSProperties = {
   fontWeight: 700,
 };
 
+const MATCH_DETAIL_RANGES = [calendarTabs[0], calendarTabs[1], LIVE_MATCH_SHEET];
+
 export default function MatchDetail() {
   const { matchId = "" } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
 
+  useSheetBatch(MATCH_DETAIL_RANGES);
   const matchesResult = useSheetRawData(calendarTabs[0]);
   const starsResult = useSheetRawData(calendarTabs[1]);
   const matchSheetResult = useSheetRawData(LIVE_MATCH_SHEET);

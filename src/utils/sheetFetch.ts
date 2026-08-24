@@ -1,8 +1,12 @@
 import { SHEET_ID, SHEET_NAMES } from "../config/sheets";
+import type { SheetRange } from "../config/sheets";
 
 export interface RowData {
   [key: string]: string;
 }
+
+const fullRange = (range: string, sheetName: string = SHEET_NAMES.players): string =>
+  `'${sheetName}'!${range}`;
 
 const fetchValues = async (
   range: string,
@@ -13,9 +17,8 @@ const fetchValues = async (
     throw new Error("Google Sheets API key not configured");
   }
 
-  const fullRange = `'${sheetName}'!${range}`;
   const valuesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(
-    fullRange
+    fullRange(range, sheetName)
   )}?key=${apiKey}`;
 
   const response = await fetch(valuesUrl);
@@ -32,17 +35,12 @@ const fetchValues = async (
 
 export const fetchSheetRawData = fetchValues;
 
-export const fetchSheetData = async (
-  range: string,
-  apiKey: string,
-  sheetName?: string
-): Promise<RowData[]> => {
-  const rows = await fetchValues(range, apiKey, sheetName);
+// Converts raw rows to objects using the first row as headers.
+export const rowsToRecords = (rows: string[][]): RowData[] => {
   if (rows.length === 0) {
     return [];
   }
 
-  // Convert rows to objects using first row as headers
   const headers = rows[0];
   return rows.slice(1).map((row: string[]) =>
     headers.reduce((obj: RowData, header: string, index: number) => {
@@ -50,4 +48,39 @@ export const fetchSheetData = async (
       return obj;
     }, {})
   );
+};
+
+export const fetchSheetData = async (
+  range: string,
+  apiKey: string,
+  sheetName?: string
+): Promise<RowData[]> => rowsToRecords(await fetchValues(range, apiKey, sheetName));
+
+// Fetches several ranges in a single Sheets API `values:batchGet` call.
+// Results are returned in the same order as `ranges`, one raw row-grid per entry.
+export const fetchSheetValuesBatch = async (
+  ranges: SheetRange[],
+  apiKey: string
+): Promise<string[][][]> => {
+  if (!apiKey) {
+    throw new Error("Google Sheets API key not configured");
+  }
+
+  const params = new URLSearchParams({ key: apiKey });
+  for (const { range, sheetName } of ranges) {
+    params.append("ranges", fullRange(range, sheetName));
+  }
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?${params.toString()}`;
+  const response = await fetch(url);
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error?.message ?? `Failed to fetch sheet data (${response.status})`
+    );
+  }
+
+  const valueRanges: { values?: string[][] }[] = result.valueRanges || [];
+  return valueRanges.map(vr => vr.values || []);
 };

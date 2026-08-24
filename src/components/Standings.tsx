@@ -1,6 +1,7 @@
 import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
+import { useSheetBatch } from "../hooks/useSheetBatch";
 import { calendarTabs } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
@@ -215,7 +216,10 @@ function StandingsSection({
   );
 }
 
+const STANDINGS_PAGE_RANGES = [STANDINGS_SHEET, calendarTabs[0]];
+
 export default function Standings() {
+  useSheetBatch(STANDINGS_PAGE_RANGES);
   const standingsResult = useSheetRawData(STANDINGS_SHEET);
   const matchesResult = useSheetRawData(calendarTabs[0]);
   const teamColors = useTeamColors();
