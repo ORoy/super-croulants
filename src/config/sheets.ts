@@ -4,7 +4,6 @@ export const SHEET_NAMES = {
   players: "Classement Joueurs 2025-26",
   calendar: "Calendrier/Résultats/Étoiles 2025-26",
   standings: "Classement Saison Régulière 2025-26",
-  teamColors: "BD Site WEB",
   matchSheets: "Feuilles de match",
 } as const;
 
@@ -14,9 +13,6 @@ export interface SheetRange {
   range: string;
   sheetName?: string;
 }
-
-// Équipe, Couleur Fond, Couleur text — 4 rows, one per team.
-export const TEAM_COLORS_SHEET: SheetRange = { range: "A1:C5", sheetName: SHEET_NAMES.teamColors };
 
 export const playerTabs: (SheetRange & { label: string })[] = [
   { label: "Saison Régulière", range: "B2:I72" },
