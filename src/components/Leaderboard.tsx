@@ -113,19 +113,16 @@ const MODES: Mode[] = [
   {
     sheetLabel: "Moyenne pts/match",
     displayLabel: "Moyenne Pts/Match",
-    columns: [
-      { key: "Rang", label: "RANG" },
-      { key: "Status", label: "STATUT" },
-      { key: "Nom", label: "JOUEUR" },
-      { key: "PTS", label: "PTS" },
-      { key: "Buts", label: "BUTS" },
-      { key: "Passes", label: "PASSES" },
-      { key: "PJ", label: "PJ" },
-      { key: "Moy PTS / Match", label: "MOY PTS/MATCH" },
-    ],
-    nameKey: "Nom",
+    columns: REGULAR_SERIES_BOTH_COLUMNS,
+    nameKey: "JOUEURS",
+    teamKey: "ÉQUIPES",
   },
 ];
+
+// "Moyenne pts/match" isn't its own sheet range — it's Saison Régulière
+// filtered to players above this per-game points average.
+const MOYENNE_PTS_MATCH_THRESHOLD = 2.0;
+const MOY_PTS_MATCH_KEY = "MOY PTS/ Match";
 
 const pillBase: CSSProperties = {
   padding: "8px 16px",
@@ -158,14 +155,20 @@ export default function Leaderboard() {
   const [activeModeIndex, setActiveModeIndex] = useState(0);
   const activeMode = MODES[activeModeIndex];
 
+  const isMoyennePtsMatch = activeMode.sheetLabel === "Moyenne pts/match";
+  const sourceLabel = isMoyennePtsMatch ? "Saison Régulière" : activeMode.sheetLabel;
   const { data, loading, error } = useSheetData(
-    playerTabs.find(tab => tab.label === activeMode.sheetLabel) ?? { range: "" }
+    playerTabs.find(tab => tab.label === sourceLabel) ?? { range: "" }
   );
 
-  const rows = useMemo(
-    () => data.map(normalizeRow).filter(row => (row[activeMode.nameKey] ?? "").trim() !== ""),
-    [data, activeMode.nameKey]
-  );
+  const rows = useMemo(() => {
+    const normalized = data.map(normalizeRow).filter(row => (row[activeMode.nameKey] ?? "").trim() !== "");
+    if (!isMoyennePtsMatch) return normalized;
+    return normalized.filter(row => {
+      const value = Number((row[MOY_PTS_MATCH_KEY] ?? "").replace(",", "."));
+      return Number.isFinite(value) && value > MOYENNE_PTS_MATCH_THRESHOLD;
+    });
+  }, [data, activeMode.nameKey, isMoyennePtsMatch]);
 
   return (
     <div>

@@ -4,7 +4,7 @@ import { SHEET_NAMES, type SheetRange } from "../config/sheets";
 // three team tables (Overall, Séries, Saison Régulière) into one range, each
 // with its own 2-row header block. Used by both the Standings and Teams
 // views so the team list/rank/record stay derived from a single source.
-export const STANDINGS_SHEET: SheetRange = { range: "A1:T22", sheetName: SHEET_NAMES.standings };
+export const STANDINGS_SHEET: SheetRange = { range: "A2:T22", sheetName: SHEET_NAMES.standings };
 
 export const SECTION_TITLES = {
   overall: "SAISON RÉGULIÈRE + SÉRIES ÉLIMINATOIRES",
