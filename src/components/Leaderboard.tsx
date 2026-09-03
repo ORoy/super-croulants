@@ -2,6 +2,7 @@ import { useMemo, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import StatTable, { type TableColumn } from "./StatTable";
 import { useSheetData } from "../hooks/useSheetData";
+import { useSeason } from "../hooks/useSeason";
 import { playerTabs } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { normalizeRow } from "../utils/normalizeRow";
@@ -152,12 +153,14 @@ const pillActive: CSSProperties = {
 
 export default function Leaderboard() {
   const navigate = useNavigate();
+  const { season, spreadsheetId } = useSeason();
   const [activeModeIndex, setActiveModeIndex] = useState(0);
   const activeMode = MODES[activeModeIndex];
 
   const isMoyennePtsMatch = activeMode.sheetLabel === "Moyenne pts/match";
   const sourceLabel = isMoyennePtsMatch ? "Saison Régulière" : activeMode.sheetLabel;
   const { data, loading, error } = useSheetData(
+    spreadsheetId,
     playerTabs.find(tab => tab.label === sourceLabel) ?? { range: "" }
   );
 
@@ -233,7 +236,7 @@ export default function Leaderboard() {
             const name = row[activeMode.nameKey];
             if (!name) return;
             const team = activeMode.teamKey ? (row[activeMode.teamKey] ?? "") : "";
-            navigate(`/leaderboard/${encodePlayerId(name, team)}`);
+            navigate(`/${season}/leaderboard/${encodePlayerId(name, team)}`);
           }}
         />
       )}

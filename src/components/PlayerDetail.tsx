@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSheetData, useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
-import { playerTabs, LIVE_MATCH_SHEET } from "../config/sheets";
+import { useSeason } from "../hooks/useSeason";
+import { playerTabs, liveMatchSheet } from "../config/sheets";
 import { normalizeRow } from "../utils/normalizeRow";
 import { decodePlayerId } from "../utils/playerId";
 import { equalsIgnoreCase } from "../utils/textMatch";
@@ -12,10 +13,6 @@ import DetailPageStatus from "./DetailPageStatus";
 import StatCard from "./StatCard";
 
 const GAME_LOG_GRID_COLUMNS = "1fr 2fr 50px 50px 50px";
-
-const SKATER_SHEET = playerTabs.find(tab => tab.label === "Saison Régulière")!;
-const PENALTY_SHEET = playerTabs.find(tab => tab.label === "Pénalités")!;
-const GOALIE_SHEET = playerTabs.find(tab => tab.label === "Gardiens")!;
 
 const matchesPlayer = (row: Record<string, string>, nameKey: string, teamKey: string, name: string, team: string) => {
   if (!equalsIgnoreCase(row[nameKey] ?? "", name)) {
@@ -30,12 +27,17 @@ const matchesPlayer = (row: Record<string, string>, nameKey: string, teamKey: st
 export default function PlayerDetail() {
   const { playerId = "" } = useParams<{ playerId: string }>();
   const navigate = useNavigate();
+  const { season, spreadsheetId } = useSeason();
   const { name, team } = decodePlayerId(playerId);
 
-  const skaterResult = useSheetData(SKATER_SHEET);
-  const penaltyResult = useSheetData(PENALTY_SHEET);
-  const goalieResult = useSheetData(GOALIE_SHEET);
-  const matchSheetResult = useSheetRawData(LIVE_MATCH_SHEET);
+  const skaterSheet = playerTabs.find(tab => tab.label === "Saison Régulière")!;
+  const penaltySheet = playerTabs.find(tab => tab.label === "Pénalités")!;
+  const goalieSheet = playerTabs.find(tab => tab.label === "Gardiens")!;
+
+  const skaterResult = useSheetData(spreadsheetId, skaterSheet);
+  const penaltyResult = useSheetData(spreadsheetId, penaltySheet);
+  const goalieResult = useSheetData(spreadsheetId, goalieSheet);
+  const matchSheetResult = useSheetRawData(spreadsheetId, liveMatchSheet(season));
   const teamColors = useTeamColors();
   const { getTeamColor } = teamColors;
 
@@ -71,7 +73,7 @@ export default function PlayerDetail() {
   const backLink = (
     <div
       style={{ color: colors.accent, fontSize: 13, cursor: "pointer", marginBottom: 16 }}
-      onClick={() => navigate("/leaderboard")}
+      onClick={() => navigate(`/${season}/leaderboard`)}
     >
       ← Retour au classement
     </div>
@@ -114,7 +116,7 @@ export default function PlayerDetail() {
           </div>
           <div style={{ fontSize: 14, color: colors.mutedText, marginTop: 6 }}>
             <span
-              onClick={() => navigate(`/teams/${encodeURIComponent(playerTeam)}`)}
+              onClick={() => navigate(`/${season}/teams/${encodeURIComponent(playerTeam)}`)}
               style={{ cursor: "pointer" }}
             >
               {playerTeam}
@@ -194,7 +196,7 @@ export default function PlayerDetail() {
                 >
                   <div style={{ color: colors.mutedText }}>{row.date}</div>
                   <div
-                    onClick={() => navigate(`/teams/${encodeURIComponent(row.opponent)}`)}
+                    onClick={() => navigate(`/${season}/teams/${encodeURIComponent(row.opponent)}`)}
                     style={{ cursor: "pointer" }}
                   >
                     {row.isHome ? "vs " : "@ "}

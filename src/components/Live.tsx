@@ -2,7 +2,8 @@ import { useMemo, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSheetRawData } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
-import { LIVE_MATCH_SHEET } from "../config/sheets";
+import { useSeason } from "../hooks/useSeason";
+import { liveMatchSheet } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { parseLiveGames, computeStandouts, type LiveGame, type LiveStandout } from "../utils/liveMatches";
 import { encodePlayerId } from "../utils/playerId";
@@ -39,12 +40,13 @@ interface LiveGameCardProps {
 
 function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
   const navigate = useNavigate();
+  const { season } = useSeason();
   const standouts = useMemo(
     () => computeStandouts(game.home, game.away, game.home.name, game.away.name),
     [game]
   );
 
-  const goToTeam = (team: string) => () => navigate(`/teams/${encodeURIComponent(team)}`);
+  const goToTeam = (team: string) => () => navigate(`/${season}/teams/${encodeURIComponent(team)}`);
 
   const awayColor = getTeamColor(game.away.name);
   const homeColor = getTeamColor(game.home.name);
@@ -216,7 +218,7 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
                 Meneur
               </div>
               <div
-                onClick={() => navigate(`/leaderboard/${encodePlayerId(standout.name, standout.teamName)}`)}
+                onClick={() => navigate(`/${season}/leaderboard/${encodePlayerId(standout.name, standout.teamName)}`)}
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontSize: 20,
@@ -242,7 +244,12 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
 }
 
 export default function Live() {
-  const { data: rawData, loading, error } = useSheetRawData(LIVE_MATCH_SHEET, POLL_INTERVAL_MS);
+  const { season, spreadsheetId } = useSeason();
+  const { data: rawData, loading, error } = useSheetRawData(
+    spreadsheetId,
+    liveMatchSheet(season),
+    POLL_INTERVAL_MS
+  );
   const { getTeamColor, loading: colorsLoading, error: colorsError } = useTeamColors();
 
   const liveGames = useMemo(

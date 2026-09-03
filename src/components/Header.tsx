@@ -1,14 +1,16 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { colors } from "../theme/tokens";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { useSeason } from "../hooks/useSeason";
+import { SEASONS, DEFAULT_SEASON, type Season } from "../config/sheets";
 
 const NAV_ITEMS = [
-  { label: "Classement", path: "/standings" },
-  { label: "Joueurs", path: "/leaderboard" },
-  { label: "Équipes", path: "/teams" },
-  { label: "Calendrier", path: "/calendar" },
-  { label: "En direct", path: "/live" },
+  { label: "Classement", path: "standings" },
+  { label: "Joueurs", path: "leaderboard" },
+  { label: "Équipes", path: "teams" },
+  { label: "Calendrier", path: "calendar" },
+  { label: "En direct", path: "live", liveOnly: true },
 ];
 
 const TAB_BASE: CSSProperties = {
@@ -45,6 +47,32 @@ const TAB_ACTIVE_MOBILE: CSSProperties = {
   color: "#12181e",
 };
 
+const seasonTagLabel = (s: Season): string => (s === DEFAULT_SEASON ? "En cours" : "Terminée");
+
+const seasonRowStyle = (selected: boolean): CSSProperties =>
+  selected
+    ? {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 14,
+        padding: "9px 12px",
+        cursor: "pointer",
+        fontSize: 13,
+        fontWeight: 600,
+        background: "oklch(0.24 0.02 250)",
+      }
+    : {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 14,
+        padding: "9px 12px",
+        cursor: "pointer",
+        fontSize: 13,
+        color: "oklch(0.8 0.02 250)",
+      };
+
 const logoStyle: CSSProperties = {
   width: 38,
   height: 38,
@@ -59,15 +87,123 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { season } = useSeason();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [seasonOpen, setSeasonOpen] = useState(false);
+  const seasonPickerRef = useRef<HTMLDivElement>(null);
   const showMobileNav = isMobile && mobileNavOpen;
 
-  const isActive = (path: string) => location.pathname.startsWith(path);
+  const visibleNavItems = NAV_ITEMS.filter(item => !item.liveOnly || season === DEFAULT_SEASON);
+
+  const isActive = (path: string) => location.pathname.startsWith(`/${season}/${path}`);
 
   const handleNavigate = (path: string) => {
-    navigate(path);
+    navigate(`/${season}/${path}`);
     setMobileNavOpen(false);
   };
+
+  const handleSeasonChange = (newSeason: Season) => {
+    const [, , ...rest] = location.pathname.split("/");
+    const restPath = rest.join("/") || "leaderboard";
+    const target = restPath.startsWith("live") && newSeason !== DEFAULT_SEASON ? "leaderboard" : restPath;
+    navigate(`/${newSeason}/${target}`);
+    setSeasonOpen(false);
+    setMobileNavOpen(false);
+  };
+
+  useEffect(() => {
+    if (!seasonOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (!seasonPickerRef.current?.contains(e.target as Node)) {
+        setSeasonOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [seasonOpen]);
+
+  const seasonPickerDesktop = (
+    <div ref={seasonPickerRef} style={{ marginLeft: "auto", position: "relative", flexShrink: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: 13,
+          color: "oklch(0.85 0.02 250)",
+          border: "1px solid oklch(0.3 0.02 250)",
+          borderRadius: 6,
+          padding: "6px 12px",
+          whiteSpace: "nowrap",
+          cursor: "pointer",
+        }}
+        onClick={() => setSeasonOpen(open => !open)}
+      >
+        <span style={{ fontSize: 10, letterSpacing: "1.5px", textTransform: "uppercase", color: "oklch(0.62 0.02 250)" }}>
+          Saison
+        </span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "oklch(0.85 0.02 250)" }}>{season}</span>
+        <span style={{ fontSize: 9, color: "oklch(0.62 0.02 250)" }}>▼</span>
+      </div>
+      {seasonOpen && (
+        <div
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "calc(100% + 6px)",
+            minWidth: 190,
+            background: "oklch(0.19 0.02 250)",
+            border: "1px solid oklch(0.32 0.02 250)",
+            borderRadius: 8,
+            overflow: "hidden",
+            boxShadow: "0 14px 34px rgba(0,0,0,0.45)",
+            zIndex: 20,
+          }}
+        >
+          {SEASONS.map(s => (
+            <div key={s} style={seasonRowStyle(s === season)} onClick={() => handleSeasonChange(s)}>
+              <span>Saison {s}</span>
+              <span style={{ fontSize: 10, letterSpacing: "1px", textTransform: "uppercase", color: "oklch(0.6 0.02 250)" }}>
+                {seasonTagLabel(s)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const seasonPickerMobile = (
+    <div style={{ marginTop: 8, paddingTop: 10, borderTop: "1px solid oklch(0.26 0.02 250)" }}>
+      <div
+        style={{
+          fontSize: 10,
+          letterSpacing: "2px",
+          textTransform: "uppercase",
+          color: "oklch(0.62 0.02 250)",
+          marginBottom: 6,
+        }}
+      >
+        Saison
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {SEASONS.map(s => (
+          <div
+            key={s}
+            style={{
+              ...seasonRowStyle(s === season),
+              border: "1px solid oklch(0.3 0.02 250)",
+              borderRadius: 8,
+              minHeight: 44,
+            }}
+            onClick={() => handleSeasonChange(s)}
+          >
+            <span>Saison {s}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -98,7 +234,7 @@ export default function Header() {
             minWidth: 0,
             cursor: "pointer",
           }}
-          onClick={() => handleNavigate("/leaderboard")}
+          onClick={() => handleNavigate("leaderboard")}
         >
           <div style={logoStyle}>
             <span
@@ -167,7 +303,7 @@ export default function Header() {
         ) : (
           <>
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-              {NAV_ITEMS.map((item) => (
+              {visibleNavItems.map((item) => (
                 <div
                   key={item.path}
                   style={isActive(item.path) ? TAB_ACTIVE : TAB_INACTIVE}
@@ -177,20 +313,7 @@ export default function Header() {
                 </div>
               ))}
             </div>
-            <div
-              style={{
-                marginLeft: "auto",
-                fontSize: 13,
-                color: colors.mutedText,
-                border: "1px solid oklch(0.3 0.02 250)",
-                borderRadius: 6,
-                padding: "6px 12px",
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-              }}
-            >
-              Saison 2025–26
-            </div>
+            {seasonPickerDesktop}
           </>
         )}
       </div>
@@ -205,7 +328,7 @@ export default function Header() {
             gap: 4,
           }}
         >
-          {NAV_ITEMS.map((item) => (
+          {visibleNavItems.map((item) => (
             <div
               key={item.path}
               style={isActive(item.path) ? TAB_ACTIVE_MOBILE : TAB_INACTIVE_MOBILE}
@@ -214,6 +337,7 @@ export default function Header() {
               {item.label}
             </div>
           ))}
+          {seasonPickerMobile}
         </div>
       )}
     </div>

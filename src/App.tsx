@@ -9,6 +9,7 @@ import TeamDetail from "./components/TeamDetail";
 import MatchDetail from "./components/MatchDetail";
 import PlayerDetail from "./components/PlayerDetail";
 import { colors } from "./theme/tokens";
+import { DEFAULT_SEASON } from "./config/sheets";
 
 export default function App() {
   return (
@@ -24,16 +25,15 @@ export default function App() {
         <Header />
         <div style={{ maxWidth: 1320, margin: "0 auto", padding: "clamp(14px,4vw,28px)" }}>
           <Routes>
-            <Route path="/standings" element={<Standings />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/leaderboard/:playerId" element={<PlayerDetail />} />
-            <Route path="/teams" element={<Teams />} />
-            <Route path="/teams/:teamId" element={<TeamDetail />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/calendar/:matchId" element={<MatchDetail />} />
-            <Route path="/live" element={<Live />} />
-            <Route path="/players/*" element={<Navigate to="/leaderboard" replace />} />
-            <Route path="*" element={<Navigate to="/leaderboard" replace />} />
+            <Route path="/:season/standings" element={<Standings />} />
+            <Route path="/:season/leaderboard" element={<Leaderboard />} />
+            <Route path="/:season/leaderboard/:playerId" element={<PlayerDetail />} />
+            <Route path="/:season/teams" element={<Teams />} />
+            <Route path="/:season/teams/:teamId" element={<TeamDetail />} />
+            <Route path="/:season/calendar" element={<Calendar />} />
+            <Route path="/:season/calendar/:matchId" element={<MatchDetail />} />
+            <Route path="/:season/live" element={<Live />} />
+            <Route path="*" element={<Navigate to={`/${DEFAULT_SEASON}/leaderboard`} replace />} />
           </Routes>
         </div>
       </div>

@@ -4,8 +4,9 @@ import StatTable, { type TableColumn } from "./StatTable";
 import { useSheetRawData, useSheetData, combineFetchStates } from "../hooks/useSheetData";
 import { useSheetBatch, type BatchRange } from "../hooks/useSheetBatch";
 import { useTeamColors } from "../hooks/useTeamColors";
-import { playerTabs } from "../config/sheets";
-import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
+import { useSeason } from "../hooks/useSeason";
+import { playerTabs, standingsSheet } from "../config/sheets";
+import { SECTION_TITLES, parseStandingsSection } from "../utils/standings";
 import { normalizeRow } from "../utils/normalizeRow";
 import { equalsIgnoreCase } from "../utils/textMatch";
 import { encodePlayerId } from "../utils/playerId";
@@ -13,9 +14,6 @@ import { colors } from "../theme/tokens";
 import DetailPageStatus from "./DetailPageStatus";
 import StatCard from "./StatCard";
 import TeamLogo from "./TeamLogo";
-
-const ROSTER_SHEET = playerTabs.find(tab => tab.label === "Saison Régulière")!;
-const TEAM_DETAIL_RANGES: BatchRange[] = [STANDINGS_SHEET, { ...ROSTER_SHEET, kind: "parsed" }];
 
 const ROSTER_COLUMNS: TableColumn[] = [
   { key: "RANG", label: "RANG" },
@@ -30,11 +28,16 @@ const ROSTER_COLUMNS: TableColumn[] = [
 export default function TeamDetail() {
   const { teamId = "" } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
+  const { season, spreadsheetId } = useSeason();
   const decodedTeamId = decodeURIComponent(teamId);
 
-  useSheetBatch(TEAM_DETAIL_RANGES);
-  const standingsResult = useSheetRawData(STANDINGS_SHEET);
-  const rosterResult = useSheetData(ROSTER_SHEET);
+  const standingsRange = standingsSheet(season);
+  const rosterRange = playerTabs.find(tab => tab.label === "Saison Régulière")!;
+  const teamDetailRanges: BatchRange[] = [standingsRange, { ...rosterRange, kind: "parsed" }];
+
+  useSheetBatch(spreadsheetId, teamDetailRanges);
+  const standingsResult = useSheetRawData(spreadsheetId, standingsRange);
+  const rosterResult = useSheetData(spreadsheetId, rosterRange);
   const teamColors = useTeamColors();
   const { getTeamColor } = teamColors;
 
@@ -58,7 +61,7 @@ export default function TeamDetail() {
   const backLink = (
     <div
       style={{ color: colors.accent, fontSize: 13, cursor: "pointer", marginBottom: 16 }}
-      onClick={() => navigate("/teams")}
+      onClick={() => navigate(`/${season}/teams`)}
     >
       ← Retour aux équipes
     </div>
@@ -122,7 +125,7 @@ export default function TeamDetail() {
           onRowClick={row => {
             const name = row["JOUEURS"];
             if (!name) return;
-            navigate(`/leaderboard/${encodePlayerId(name, decodedTeamId)}`);
+            navigate(`/${season}/leaderboard/${encodePlayerId(name, decodedTeamId)}`);
           }}
         />
       )}

@@ -56,20 +56,30 @@ function useCachedSheet<T>(key: string, fetcher: () => Promise<T>, initialValue:
   };
 }
 
-export const useSheetData = ({ range, sheetName }: SheetRange): UseFetchResult<RowData[]> => {
+export const useSheetData = (
+  spreadsheetId: string,
+  { range, sheetName }: SheetRange
+): UseFetchResult<RowData[]> => {
   const apiKey = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY;
-  const key = makeKey("parsed", sheetName, range);
-  const fetcher = useCallback(() => fetchSheetData(range, apiKey, sheetName), [range, apiKey, sheetName]);
+  const key = makeKey("parsed", spreadsheetId, sheetName, range);
+  const fetcher = useCallback(
+    () => fetchSheetData(spreadsheetId, range, apiKey, sheetName),
+    [spreadsheetId, range, apiKey, sheetName]
+  );
   return useCachedSheet(key, fetcher, EMPTY_ARRAY);
 };
 
 export const useSheetRawData = (
+  spreadsheetId: string,
   { range, sheetName }: SheetRange,
   refetchIntervalMs?: number
 ): UseFetchResult<string[][]> => {
   const apiKey = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY;
-  const key = makeKey("raw", sheetName, range);
-  const fetcher = useCallback(() => fetchSheetRawData(range, apiKey, sheetName), [range, apiKey, sheetName]);
+  const key = makeKey("raw", spreadsheetId, sheetName, range);
+  const fetcher = useCallback(
+    () => fetchSheetRawData(spreadsheetId, range, apiKey, sheetName),
+    [spreadsheetId, range, apiKey, sheetName]
+  );
   const result = useCachedSheet(key, fetcher, EMPTY_ARRAY);
 
   useEffect(() => {

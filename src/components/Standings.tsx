@@ -2,9 +2,10 @@ import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
 import { useSheetBatch } from "../hooks/useSheetBatch";
-import { calendarTabs } from "../config/sheets";
+import { useSeason } from "../hooks/useSeason";
+import { calendarTabs, standingsSheet } from "../config/sheets";
 import { colors } from "../theme/tokens";
-import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
+import { SECTION_TITLES, parseStandingsSection } from "../utils/standings";
 import { extractGameLogs, withStreaks, type DisplayTeam } from "../utils/standingsStreaks";
 import { compareSortValues } from "../utils/sortValues";
 import { useColumnSort } from "../hooks/useColumnSort";
@@ -118,6 +119,7 @@ function StandingsSection({
   teams: DisplayTeam[];
 }) {
   const navigate = useNavigate();
+  const { season } = useSeason();
   const { sortState, toggleSort } = useColumnSort();
   const gridTemplateColumns = columns.map(c => c.width).join(" ");
   const minWidth = columns.reduce(
@@ -192,7 +194,7 @@ function StandingsSection({
         {sortedTeams.map(team => (
           <div
             key={team.team}
-            onClick={() => navigate(`/teams/${encodeURIComponent(team.team)}`)}
+            onClick={() => navigate(`/${season}/teams/${encodeURIComponent(team.team)}`)}
             style={{
               display: "grid",
               gridTemplateColumns,
@@ -216,12 +218,14 @@ function StandingsSection({
   );
 }
 
-const STANDINGS_PAGE_RANGES = [STANDINGS_SHEET, calendarTabs[0]];
-
 export default function Standings() {
-  useSheetBatch(STANDINGS_PAGE_RANGES);
-  const standingsResult = useSheetRawData(STANDINGS_SHEET);
-  const matchesResult = useSheetRawData(calendarTabs[0]);
+  const { season, spreadsheetId } = useSeason();
+  const standingsRange = standingsSheet(season);
+  const matchesRange = calendarTabs(season)[0];
+
+  useSheetBatch(spreadsheetId, [standingsRange, matchesRange]);
+  const standingsResult = useSheetRawData(spreadsheetId, standingsRange);
+  const matchesResult = useSheetRawData(spreadsheetId, matchesRange);
   const teamColors = useTeamColors();
   const { getTeamColor } = teamColors;
 

@@ -1,7 +1,9 @@
 // Module-level cache shared by every useSheetData/useSheetRawData call across
-// the SPA's lifetime. Keyed by (fetch kind, sheetName, range) so the same
-// range fetched raw vs. parsed-to-objects doesn't collide. Survives HashRouter
-// navigation; only a hard reload clears it. See ticket 13.
+// the SPA's lifetime. Keyed by (fetch kind, spreadsheetId, sheetName, range)
+// so the same range fetched raw vs. parsed-to-objects doesn't collide, and so
+// two seasons sharing an unsuffixed tab name (see ticket 14) don't collide
+// either. Survives HashRouter navigation; only a hard reload clears it. See
+// ticket 13.
 
 export type FetchStatus = "idle" | "loading" | "success" | "error";
 
@@ -23,8 +25,12 @@ interface Entry<T = unknown> {
 
 const cache = new Map<string, Entry>();
 
-export const makeKey = (kind: "raw" | "parsed", sheetName: string | undefined, range: string): string =>
-  `${kind}:${sheetName ?? ""}:${range}`;
+export const makeKey = (
+  kind: "raw" | "parsed",
+  spreadsheetId: string,
+  sheetName: string | undefined,
+  range: string
+): string => `${kind}:${spreadsheetId}:${sheetName ?? ""}:${range}`;
 
 function getEntry<T>(key: string): Entry<T> {
   let entry = cache.get(key) as Entry<T> | undefined;

@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
 import { useSheetBatch } from "../hooks/useSheetBatch";
 import { useTeamColors } from "../hooks/useTeamColors";
-import { calendarTabs, LIVE_MATCH_SHEET } from "../config/sheets";
+import { useSeason } from "../hooks/useSeason";
+import { calendarTabs, liveMatchSheet } from "../config/sheets";
 import { transformMatches } from "../utils/matches";
 import { findStarsForDate } from "../utils/stars";
 import { parseLiveGames, findFinishedGame, periodScores } from "../utils/liveMatches";
@@ -25,16 +26,19 @@ const periodWinStyle: CSSProperties = {
   fontWeight: 700,
 };
 
-const MATCH_DETAIL_RANGES = [calendarTabs[0], calendarTabs[1], LIVE_MATCH_SHEET];
-
 export default function MatchDetail() {
   const { matchId = "" } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
+  const { season, spreadsheetId } = useSeason();
 
-  useSheetBatch(MATCH_DETAIL_RANGES);
-  const matchesResult = useSheetRawData(calendarTabs[0]);
-  const starsResult = useSheetRawData(calendarTabs[1]);
-  const matchSheetResult = useSheetRawData(LIVE_MATCH_SHEET);
+  const [matchesRange, starsRange] = calendarTabs(season);
+  const matchSheetRange = liveMatchSheet(season);
+  const matchDetailRanges = [matchesRange, starsRange, matchSheetRange];
+
+  useSheetBatch(spreadsheetId, matchDetailRanges);
+  const matchesResult = useSheetRawData(spreadsheetId, matchesRange);
+  const starsResult = useSheetRawData(spreadsheetId, starsRange);
+  const matchSheetResult = useSheetRawData(spreadsheetId, matchSheetRange);
   const teamColors = useTeamColors();
   const { getTeamColor } = teamColors;
 
@@ -60,7 +64,7 @@ export default function MatchDetail() {
   const backLink = (
     <div
       style={{ color: colors.accent, fontSize: 13, cursor: "pointer", marginBottom: 16 }}
-      onClick={() => navigate("/calendar")}
+      onClick={() => navigate(`/${season}/calendar`)}
     >
       ← Retour au calendrier
     </div>
@@ -97,7 +101,7 @@ export default function MatchDetail() {
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12, minWidth: 0 }}>
           <div
-            onClick={() => navigate(`/teams/${encodeURIComponent(match.awayTeam)}`)}
+            onClick={() => navigate(`/${season}/teams/${encodeURIComponent(match.awayTeam)}`)}
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontSize: "clamp(16px,5vw,30px)",
@@ -129,7 +133,7 @@ export default function MatchDetail() {
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
           <TeamLogo teamName={match.homeTeam} color={homeColor} size={40} />
           <div
-            onClick={() => navigate(`/teams/${encodeURIComponent(match.homeTeam)}`)}
+            onClick={() => navigate(`/${season}/teams/${encodeURIComponent(match.homeTeam)}`)}
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontSize: "clamp(16px,5vw,30px)",
@@ -218,7 +222,7 @@ export default function MatchDetail() {
               }}
             >
               <div
-                onClick={() => navigate(`/teams/${encodeURIComponent(match.awayTeam)}`)}
+                onClick={() => navigate(`/${season}/teams/${encodeURIComponent(match.awayTeam)}`)}
                 style={{ fontWeight: 600, cursor: "pointer" }}
               >
                 {match.awayTeam}
@@ -242,7 +246,7 @@ export default function MatchDetail() {
               }}
             >
               <div
-                onClick={() => navigate(`/teams/${encodeURIComponent(match.homeTeam)}`)}
+                onClick={() => navigate(`/${season}/teams/${encodeURIComponent(match.homeTeam)}`)}
                 style={{ fontWeight: 600, cursor: "pointer" }}
               >
                 {match.homeTeam}
@@ -281,7 +285,7 @@ export default function MatchDetail() {
                 Étoile {star.star}
               </div>
               <div
-                onClick={() => navigate(`/leaderboard/${encodePlayerId(star.name, star.team)}`)}
+                onClick={() => navigate(`/${season}/leaderboard/${encodePlayerId(star.name, star.team)}`)}
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontSize: 20,
@@ -295,7 +299,7 @@ export default function MatchDetail() {
               <div style={{ fontSize: 13, color: colors.mutedText, marginTop: 2 }}>
                 #{star.number} ·{" "}
                 <span
-                  onClick={() => navigate(`/teams/${encodeURIComponent(star.team)}`)}
+                  onClick={() => navigate(`/${season}/teams/${encodeURIComponent(star.team)}`)}
                   style={{ cursor: "pointer" }}
                 >
                   {star.team}

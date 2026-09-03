@@ -2,14 +2,17 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSheetRawData, combineFetchStates } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
-import { STANDINGS_SHEET, SECTION_TITLES, parseStandingsSection } from "../utils/standings";
+import { useSeason } from "../hooks/useSeason";
+import { standingsSheet } from "../config/sheets";
+import { SECTION_TITLES, parseStandingsSection } from "../utils/standings";
 import { colors } from "../theme/tokens";
 import TeamLogo from "./TeamLogo";
 
 export default function Teams() {
   const navigate = useNavigate();
+  const { season, spreadsheetId } = useSeason();
 
-  const standingsResult = useSheetRawData(STANDINGS_SHEET);
+  const standingsResult = useSheetRawData(spreadsheetId, standingsSheet(season));
   const teamColors = useTeamColors();
   const { getTeamColor } = teamColors;
 
@@ -47,7 +50,7 @@ export default function Teams() {
             return (
               <div
                 key={team.team}
-                onClick={() => navigate(`/teams/${encodeURIComponent(team.team)}`)}
+                onClick={() => navigate(`/${season}/teams/${encodeURIComponent(team.team)}`)}
                 style={{
                   background: colors.cardBackground,
                   border: `1px solid ${colors.border}`,

@@ -2,7 +2,8 @@ import { useMemo, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSheetRawData } from "../hooks/useSheetData";
 import { useIsMobile } from "../hooks/useIsMobile";
-import { calendarTabs } from "../config/sheets";
+import { useSeason } from "../hooks/useSeason";
+import { calendarTabs, DEFAULT_SEASON } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { transformMatches, type Match } from "../utils/matches";
 
@@ -177,7 +178,8 @@ function MatchSection({
 
 export default function Calendar() {
   const navigate = useNavigate();
-  const { data: rawData, loading, error } = useSheetRawData(calendarTabs[0]);
+  const { season, spreadsheetId } = useSeason();
+  const { data: rawData, loading, error } = useSheetRawData(spreadsheetId, calendarTabs(season)[0]);
   const isMobile = useIsMobile();
 
   const matches = useMemo(() => transformMatches(rawData), [rawData]);
@@ -186,6 +188,11 @@ export default function Calendar() {
     () => [...matches.filter(match => match.played)].reverse(),
     [matches]
   );
+  const hasUpcoming = upcomingMatches.length > 0;
+  const subhead =
+    season === DEFAULT_SEASON
+      ? "Matchs à venir et historique des résultats"
+      : `Calendrier complet de la saison ${season} — saison terminée`;
 
   return (
     <div>
@@ -193,9 +200,7 @@ export default function Calendar() {
         <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800 }}>
           Calendrier
         </div>
-        <div style={{ fontSize: 13, color: colors.mutedText }}>
-          Matchs à venir et historique des résultats
-        </div>
+        <div style={{ fontSize: 13, color: colors.mutedText }}>{subhead}</div>
       </div>
 
       {loading && <div style={{ color: colors.mutedText, fontSize: 14 }}>Chargement…</div>}
@@ -203,21 +208,23 @@ export default function Calendar() {
 
       {!loading && !error && (
         <>
-          <MatchSection
-            title="À venir"
-            matches={upcomingMatches}
-            emptyMessage="Aucun match à venir."
-            isMobile={isMobile}
-            accentResult
-            onSelectMatch={match => navigate(`/calendar/${match.id}`)}
-          />
+          {hasUpcoming && (
+            <MatchSection
+              title="À venir"
+              matches={upcomingMatches}
+              emptyMessage="Aucun match à venir."
+              isMobile={isMobile}
+              accentResult
+              onSelectMatch={match => navigate(`/${season}/calendar/${match.id}`)}
+            />
+          )}
           <MatchSection
             title="Résultats"
             matches={pastMatches}
             emptyMessage="Aucun résultat pour le moment."
             isMobile={isMobile}
             marginBottom={0}
-            onSelectMatch={match => navigate(`/calendar/${match.id}`)}
+            onSelectMatch={match => navigate(`/${season}/calendar/${match.id}`)}
           />
         </>
       )}

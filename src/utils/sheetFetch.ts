@@ -1,23 +1,24 @@
-import { SHEET_ID, SHEET_NAMES } from "../config/sheets";
+import { PLAYERS_SHEET_NAME } from "../config/sheets";
 import type { SheetRange } from "../config/sheets";
 
 export interface RowData {
   [key: string]: string;
 }
 
-const fullRange = (range: string, sheetName: string = SHEET_NAMES.players): string =>
+const fullRange = (range: string, sheetName: string = PLAYERS_SHEET_NAME): string =>
   `'${sheetName}'!${range}`;
 
 const fetchValues = async (
+  spreadsheetId: string,
   range: string,
   apiKey: string,
-  sheetName: string = SHEET_NAMES.players
+  sheetName: string = PLAYERS_SHEET_NAME
 ): Promise<string[][]> => {
   if (!apiKey) {
     throw new Error("Google Sheets API key not configured");
   }
 
-  const valuesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(
+  const valuesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(
     fullRange(range, sheetName)
   )}?key=${apiKey}`;
 
@@ -51,14 +52,16 @@ export const rowsToRecords = (rows: string[][]): RowData[] => {
 };
 
 export const fetchSheetData = async (
+  spreadsheetId: string,
   range: string,
   apiKey: string,
   sheetName?: string
-): Promise<RowData[]> => rowsToRecords(await fetchValues(range, apiKey, sheetName));
+): Promise<RowData[]> => rowsToRecords(await fetchValues(spreadsheetId, range, apiKey, sheetName));
 
 // Fetches several ranges in a single Sheets API `values:batchGet` call.
 // Results are returned in the same order as `ranges`, one raw row-grid per entry.
 export const fetchSheetValuesBatch = async (
+  spreadsheetId: string,
   ranges: SheetRange[],
   apiKey: string
 ): Promise<string[][][]> => {
@@ -71,7 +74,7 @@ export const fetchSheetValuesBatch = async (
     params.append("ranges", fullRange(range, sheetName));
   }
 
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?${params.toString()}`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${params.toString()}`;
   const response = await fetch(url);
   const result = await response.json();
 
