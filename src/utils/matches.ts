@@ -6,6 +6,7 @@ const MATCH_COLUMNS = 10;
 export interface Match {
   id: string;
   date: string;
+  hour: string;
   awayTeam: string;
   awayScore: number | null;
   awayPtsFS: number | null;
@@ -16,6 +17,12 @@ export interface Match {
   status: string;
   resultLabel: string;
 }
+
+// "19:30" (sheet's colon format) -> "19h30" (Québécois convention).
+const formatHour = (value: string | undefined): string => {
+  const trimmed = value?.trim() ?? "";
+  return trimmed.includes(":") ? trimmed.replace(":", "h") : trimmed;
+};
 
 const parseScore = (value: string | undefined): number | null => {
   const trimmed = value?.trim() ?? "";
@@ -30,6 +37,7 @@ const parseScore = (value: string | undefined): number | null => {
 // [phase, date, heure, ptsFS visiteur, buts visiteur, visiteurs, "@", local, buts local, ptsFS local]
 const buildMatch = (values: string[], id: string): Match | null => {
   const date = values[1]?.trim() ?? "";
+  const hour = formatHour(values[2]);
   const awayTeam = values[5]?.trim() ?? "";
   const homeTeam = values[7]?.trim() ?? "";
 
@@ -46,6 +54,7 @@ const buildMatch = (values: string[], id: string): Match | null => {
   return {
     id,
     date,
+    hour,
     awayTeam,
     awayScore,
     awayPtsFS,

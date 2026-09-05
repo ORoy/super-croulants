@@ -5,6 +5,7 @@ export const colors = {
   cardBackground: "oklch(0.18 0.02 250)",
   border: "oklch(0.27 0.02 250)",
   mutedText: "oklch(0.68 0.02 250)",
+  subtleText: "oklch(0.55 0.02 250)",
   primaryText: "oklch(0.95 0.01 250)",
   accent: "#B08A4E",
   positive: "oklch(0.7 0.14 150)",

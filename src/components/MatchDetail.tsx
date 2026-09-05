@@ -88,7 +88,8 @@ export default function MatchDetail() {
     <div>
       {backLink}
       <div style={{ fontSize: 13, color: colors.mutedText, marginBottom: 6 }}>
-        {match.date} · {match.status}
+        {match.date}
+        {match.hour && ` · ${match.hour}`} · {match.status}
       </div>
       <div
         style={{

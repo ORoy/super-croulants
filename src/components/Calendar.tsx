@@ -46,7 +46,10 @@ function MatchRow({ match, isMobile, accentResult = false, onClick }: MatchRowPr
             marginBottom: 6,
           }}
         >
-          <div style={{ fontSize: 12, color: colors.mutedText }}>{match.date}</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: 12, color: colors.mutedText }}>
+            <span>{match.date}</span>
+            {match.hour && <span style={{ color: colors.subtleText }}>{match.hour}</span>}
+          </div>
           <div style={mutedLabelStyle}>{match.status}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
@@ -103,7 +106,10 @@ function MatchRow({ match, isMobile, accentResult = false, onClick }: MatchRowPr
         cursor: "pointer",
       }}
     >
-      <div style={{ fontSize: 13, color: colors.mutedText }}>{match.date}</div>
+      <div style={{ fontSize: 13, color: colors.mutedText, lineHeight: 1.35 }}>
+        <div>{match.date}</div>
+        {match.hour && <div style={{ fontSize: 11, color: colors.subtleText }}>{match.hour}</div>}
+      </div>
       <div style={{ fontWeight: 600, textAlign: "right" }}>{match.awayTeam}</div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 8px", gap: 1 }}>
         <div style={resultStyle}>{match.resultLabel}</div>
