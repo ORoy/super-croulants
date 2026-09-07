@@ -214,6 +214,14 @@ export default function Calendar() {
 
       {!loading && !error && (
         <>
+          <MatchSection
+            title="Résultats"
+            matches={pastMatches}
+            emptyMessage="Aucun résultat pour le moment."
+            isMobile={isMobile}
+            marginBottom={hasUpcoming ? 32 : 0}
+            onSelectMatch={match => navigate(`/${season}/calendar/${match.id}`)}
+          />
           {hasUpcoming && (
             <MatchSection
               title="À venir"
@@ -221,17 +229,10 @@ export default function Calendar() {
               emptyMessage="Aucun match à venir."
               isMobile={isMobile}
               accentResult
+              marginBottom={0}
               onSelectMatch={match => navigate(`/${season}/calendar/${match.id}`)}
             />
           )}
-          <MatchSection
-            title="Résultats"
-            matches={pastMatches}
-            emptyMessage="Aucun résultat pour le moment."
-            isMobile={isMobile}
-            marginBottom={0}
-            onSelectMatch={match => navigate(`/${season}/calendar/${match.id}`)}
-          />
         </>
       )}
     </div>
