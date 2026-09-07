@@ -43,10 +43,15 @@ export const extractGameLogs = (rawRows: string[][]): Map<string, TeamGame[]> =>
     ];
 
     for (const game of games) {
+      // Unplayed slots are either blank or filled with "----"/"--"
+      // placeholders; both must be excluded before the Number() parse,
+      // since Number("") is 0 (a valid, finite score).
+      if (!game.awayGoals?.trim() || !game.homeGoals?.trim()) {
+        continue;
+      }
+
       const awayGoals = Number(game.awayGoals);
       const homeGoals = Number(game.homeGoals);
-      // Unplayed slots are filled with "----"/"--" placeholders, which fail
-      // to parse as finite numbers.
       if (!Number.isFinite(awayGoals) || !Number.isFinite(homeGoals)) {
         continue;
       }
