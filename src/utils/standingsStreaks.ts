@@ -100,7 +100,7 @@ const computeLast6 = (games: TeamGame[]): string => {
   const w = recent.filter(g => g.outcome === "W").length;
   const l = recent.filter(g => g.outcome === "L").length;
   const t = recent.filter(g => g.outcome === "T").length;
-  return t > 0 ? `${w}-${l}-${t}` : `${w}-${l}`;
+  return `${w}-${l}-${t}`;
 };
 
 export interface DisplayTeam extends TeamStanding {
