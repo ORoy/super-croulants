@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import StatTable, { type TableColumn } from "./StatTable";
 import { useSheetData } from "../hooks/useSheetData";
 import { useSeason } from "../hooks/useSeason";
-import { playerTabs } from "../config/sheets";
+import { playerTabs, type Season } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { normalizeRow } from "../utils/normalizeRow";
 import { encodePlayerId } from "../utils/playerId";
@@ -18,6 +18,10 @@ const REGULAR_SERIES_BOTH_COLUMNS: TableColumn[] = [
   { key: "PJ", label: "PJ" },
   { key: "MOY PTS/ Match", label: "MOY PTS/MATCH" },
 ];
+
+// The "1997-1998" tab's header ("Progression 2025-26", "Progression 2026-27", …)
+// tracks the current season, so its column key can't be a static literal.
+const PROGRESSION_KEY_PLACEHOLDER = "__PROGRESSION_KEY__";
 
 interface Mode {
   /** Matches an entry in `playerTabs` (drives the sheet range fetched). */
@@ -100,7 +104,7 @@ const MODES: Mode[] = [
     columns: [
       { key: "Rang", label: "RANG" },
       { key: "Rang Début de saison", label: "RANG DÉBUT SAISON" },
-      { key: "Progression 2025-26", label: "PROGRESSION" },
+      { key: PROGRESSION_KEY_PLACEHOLDER, label: "PROGRESSION" },
       { key: "Status", label: "STATUT" },
       { key: "Nom", label: "JOUEUR" },
       { key: "PTS", label: "PTS" },
@@ -112,6 +116,13 @@ const MODES: Mode[] = [
     nameKey: "Nom",
   },
 ];
+
+const resolveMode = (mode: Mode, season: Season): Mode => ({
+  ...mode,
+  columns: mode.columns.map(column =>
+    column.key === PROGRESSION_KEY_PLACEHOLDER ? { ...column, key: `Progression ${season}` } : column
+  ),
+});
 
 const pillBase: CSSProperties = {
   padding: "8px 16px",
@@ -143,7 +154,7 @@ export default function Leaderboard() {
   const navigate = useNavigate();
   const { season, spreadsheetId } = useSeason();
   const [activeModeIndex, setActiveModeIndex] = useState(0);
-  const activeMode = MODES[activeModeIndex];
+  const activeMode = useMemo(() => resolveMode(MODES[activeModeIndex], season), [activeModeIndex, season]);
 
   const { data, loading, error } = useSheetData(
     spreadsheetId,
