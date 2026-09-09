@@ -261,6 +261,9 @@ export default function Standings() {
   );
 
   const { loading, error } = combineFetchStates(standingsResult, matchesResult, teamColors);
+  // The sheet pre-fills a "Séries" section template before any playoff game
+  // is played (all-zero rows) — only show it once a series game has GP > 0.
+  const seriesStarted = series.some(t => t.gp > 0);
 
   return (
     <div>
@@ -269,7 +272,7 @@ export default function Standings() {
           Classement des Équipes
         </div>
         <div style={{ fontSize: 13, color: colors.mutedText }}>
-          Ensemble (saison régulière + séries)
+          {seriesStarted ? "Ensemble (saison régulière + séries)" : "Saison régulière"}
         </div>
       </div>
 
@@ -278,9 +281,13 @@ export default function Standings() {
 
       {!loading && !error && (
         <>
-          <StandingsSection title="Saison + Séries" columns={FULL_COLUMNS} teams={overall} />
+          {seriesStarted && (
+            <StandingsSection title="Séries" columns={RECORD_WITH_STREAK_COLUMNS} teams={series} />
+          )}
           <StandingsSection title="Saison Régulière" columns={FULL_COLUMNS} teams={regular} />
-          <StandingsSection title="Séries" columns={RECORD_WITH_STREAK_COLUMNS} teams={series} />
+          {seriesStarted && (
+            <StandingsSection title="Saison + Séries" columns={FULL_COLUMNS} teams={overall} />
+          )}
         </>
       )}
     </div>
