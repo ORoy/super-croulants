@@ -54,10 +54,10 @@ export default function MatchDetail() {
 
   const periods = useMemo(() => {
     if (!match || !match.played) return null;
-    const games = parseLiveGames(matchSheetResult.data);
+    const games = parseLiveGames(matchSheetResult.data, season);
     const game = findFinishedGame(games, match.date, match.awayTeam, match.homeTeam);
     return game ? periodScores(game) : null;
-  }, [matchSheetResult.data, match]);
+  }, [matchSheetResult.data, match, season]);
 
   const { loading, error } = combineFetchStates(matchesResult, starsResult, matchSheetResult, teamColors);
 

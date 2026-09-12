@@ -1,4 +1,5 @@
 import { equalsIgnoreCase } from "./textMatch";
+import type { Season } from "../config/sheets";
 
 // Parses "Feuilles de match" — a per-game scoresheet layout, one 20-row
 // block per game. Each block holds two team sub-blocks side by side: the
@@ -30,6 +31,54 @@ const GOAL_PERIOD_COL = 12;
 const GOAL_TIME_COL = 13;
 const GOAL_SCORER_COL = 14;
 const GOAL_ASSIST_COLS = [15, 16] as const;
+
+// A game counts as "in progress" from its scheduled Heure onward (see ticket
+// 14) until the scoresheet is marked finished, or after this long if it never
+// is — a backstop for a postponed/never-scored game, not the normal path.
+const LIVE_WINDOW_MS = 3 * 60 * 60 * 1000;
+
+const EASTERN_TIME_ZONE = "America/Toronto";
+
+// League plays local Quebec (Eastern) time; the sheet's Heure carries no
+// timezone. Re-reading "now" through this zone and building scheduledStart
+// with the plain (browser-local) Date constructor puts both sides of every
+// comparison in the same shifted-but-consistent frame, so start/duration math
+// below is correct regardless of the viewer's actual timezone — no tz library
+// needed.
+const easternNow = (): Date => new Date(new Date().toLocaleString("en-US", { timeZone: EASTERN_TIME_ZONE }));
+
+const MONTH_ABBREVIATIONS: Record<string, number> = {
+  Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+  Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+};
+
+// Season "2026-27" -> Sep-Dec belongs to 2026, Jan-Aug to 2027 (the sheet's
+// Date cell carries no year).
+const seasonYearForMonth = (season: Season, month: number): number => {
+  const startYear = Number(season.slice(0, 4));
+  return month >= MONTH_ABBREVIATIONS.Sep ? startYear : startYear + 1;
+};
+
+// Parses the block's own "Date:"/"Heure:" cells (e.g. "11 Sep" + "19:30")
+// into the game's scheduled Eastern-time start. Returns null on anything
+// unexpected — a bad row should be skipped from the live list, never
+// silently treated as live (ticket 14).
+const parseScheduledStart = (date: string, time: string, season: Season): Date | null => {
+  const dateMatch = /^(\d{1,2})\s+([A-Za-z]{3})$/.exec(date.trim());
+  const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+  if (!dateMatch || !timeMatch) return null;
+
+  const month = MONTH_ABBREVIATIONS[dateMatch[2]];
+  if (month === undefined) return null;
+
+  const day = Number(dateMatch[1]);
+  const hours = Number(timeMatch[1]);
+  const minutes = Number(timeMatch[2]);
+  const year = seasonYearForMonth(season, month);
+
+  const start = new Date(year, month, day, hours, minutes);
+  return Number.isNaN(start.getTime()) ? null : start;
+};
 
 export interface LiveGoal {
   period: number;
@@ -72,6 +121,7 @@ export interface LiveGame {
   period: number | null;
   isInProgress: boolean;
   isFinished: boolean;
+  hasScoresheetData: boolean;
 }
 
 export interface PlayerGameLogRow {
@@ -149,8 +199,9 @@ const currentPeriod = (home: LiveTeam, away: LiveTeam): number | null => {
   return latest || null;
 };
 
-export const parseLiveGames = (rows: string[][]): LiveGame[] => {
+export const parseLiveGames = (rows: string[][], season: Season): LiveGame[] => {
   const games: LiveGame[] = [];
+  const now = easternNow();
 
   for (let start = 0; start + BLOCK_ROWS <= rows.length; start += BLOCK_ROWS) {
     const block = rows.slice(start, start + BLOCK_ROWS);
@@ -165,13 +216,24 @@ export const parseLiveGames = (rows: string[][]): LiveGame[] => {
 
     // Confirmed done-signal: period-3 shots-on-goal filled in for both teams.
     const isFinished = home.shotsByPeriod[2] !== "" && away.shotsByPeriod[2] !== "";
-    const hasStarted =
+    // Whether anyone has actually typed anything into the scoresheet yet —
+    // no longer what gates "in progress" (that's the schedule, below), but
+    // still what the live screen uses to tell a real 0-0 from a game that
+    // just hasn't been scored yet (ticket 14).
+    const hasScoresheetData =
       home.shotsByPeriod[0] !== "" ||
       away.shotsByPeriod[0] !== "" ||
       home.goals.length > 0 ||
       away.goals.length > 0 ||
       home.penalties.length > 0 ||
       away.penalties.length > 0;
+
+    const scheduledStart = parseScheduledStart(date, time, season);
+    const isInProgress =
+      scheduledStart !== null &&
+      !isFinished &&
+      now.getTime() >= scheduledStart.getTime() &&
+      now.getTime() < scheduledStart.getTime() + LIVE_WINDOW_MS;
 
     games.push({
       id: `${date}-${time}-${start}`,
@@ -184,8 +246,9 @@ export const parseLiveGames = (rows: string[][]): LiveGame[] => {
       homeScore: home.goals.length,
       awayScore: away.goals.length,
       period: currentPeriod(home, away),
-      isInProgress: hasStarted && !isFinished,
+      isInProgress,
       isFinished,
+      hasScoresheetData,
     });
   }
 

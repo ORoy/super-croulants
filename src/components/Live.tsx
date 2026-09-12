@@ -77,7 +77,7 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
             marginBottom: 14,
           }}
         >
-          Période {game.period ?? 1}
+          {game.hasScoresheetData ? `Période ${game.period ?? 1}` : "En attente de la feuille de match"}
         </div>
         <div
           style={{
@@ -253,8 +253,8 @@ export default function Live() {
   const { getTeamColor, loading: colorsLoading, error: colorsError } = useTeamColors();
 
   const liveGames = useMemo(
-    () => parseLiveGames(rawData).filter(game => game.isInProgress),
-    [rawData]
+    () => parseLiveGames(rawData, season).filter(game => game.isInProgress),
+    [rawData, season]
   );
 
   const isLoading = loading || colorsLoading;

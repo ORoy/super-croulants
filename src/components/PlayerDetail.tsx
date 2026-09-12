@@ -66,8 +66,8 @@ export default function PlayerDetail() {
   // Skaters only — G/A/PTS per game, reusing the "Feuilles de match" parser
   // built for tickets 08/09 (ticket 12). +/- has no source in that sheet.
   const gameLog = useMemo(
-    () => (skater ? playerGameLog(parseLiveGames(matchSheetResult.data), name, playerTeam) : []),
-    [skater, matchSheetResult.data, name, playerTeam]
+    () => (skater ? playerGameLog(parseLiveGames(matchSheetResult.data, season), name, playerTeam) : []),
+    [skater, matchSheetResult.data, name, playerTeam, season]
   );
 
   const backLink = (
