@@ -21,6 +21,7 @@ interface Entry<T = unknown> {
   promise?: Promise<void>;
   fetcher?: () => Promise<T>;
   listeners: Set<() => void>;
+  lastFetchedAt?: number;
 }
 
 const cache = new Map<string, Entry>();
@@ -81,6 +82,7 @@ export function ensureLoaded<T>(key: string, fetcher: () => Promise<T>, force = 
   entry.promise = fetcher()
     .then(result => {
       setSnapshot(key, entry, { data: result, status: "success", error: null });
+      entry.lastFetchedAt = Date.now();
       entry.promise = undefined;
     })
     .catch((err: unknown) => {
@@ -110,6 +112,7 @@ export function claimForBatch(key: string): boolean {
 export function resolveBatch<T>(key: string, data: T): void {
   const entry = getEntry<T>(key);
   setSnapshot(key, entry, { data, status: "success", error: null });
+  entry.lastFetchedAt = Date.now();
   entry.promise = undefined;
 }
 
@@ -119,13 +122,22 @@ export function rejectBatch(key: string, message: string): void {
   entry.promise = undefined;
 }
 
+const REFRESH_ON_FOCUS_AFTER_MS = 60 * 60 * 1000; // 1 hour
+
 // On tab focus regain, refetch only the ranges a currently-mounted page
-// actually needs (i.e. keys with an active subscriber).
+// actually needs (i.e. keys with an active subscriber), and only if the last
+// successful fetch is stale enough to be worth the Sheets API quota cost.
 function refreshActiveEntries(): void {
+  const now = Date.now();
   for (const [key, entry] of cache) {
-    if (entry.listeners.size > 0 && entry.fetcher) {
-      ensureLoaded(key, entry.fetcher, true);
+    if (entry.listeners.size === 0 || !entry.fetcher) {
+      continue;
     }
+    const isFresh = entry.lastFetchedAt !== undefined && now - entry.lastFetchedAt < REFRESH_ON_FOCUS_AFTER_MS;
+    if (isFresh) {
+      continue;
+    }
+    ensureLoaded(key, entry.fetcher, true);
   }
 }
 
