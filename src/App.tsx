@@ -8,35 +8,60 @@ import Teams from "./components/Teams";
 import TeamDetail from "./components/TeamDetail";
 import MatchDetail from "./components/MatchDetail";
 import PlayerDetail from "./components/PlayerDetail";
+import RequireAdmin from "./components/RequireAdmin";
+import { AdminProvider } from "./context/AdminContext";
 import { colors } from "./theme/tokens";
 import { DEFAULT_SEASON } from "./config/sheets";
 
 export default function App() {
   return (
     <HashRouter>
-      <div
-        style={{
-          minHeight: "100vh",
-          background: colors.background,
-          color: colors.primaryText,
-          fontFamily: "'Work Sans', sans-serif",
-        }}
-      >
-        <Header />
-        <div style={{ maxWidth: 1320, margin: "0 auto", padding: "clamp(14px,4vw,28px)" }}>
-          <Routes>
-            <Route path="/:season/standings" element={<Standings />} />
-            <Route path="/:season/leaderboard" element={<Leaderboard />} />
-            <Route path="/:season/leaderboard/:playerId" element={<PlayerDetail />} />
-            <Route path="/:season/teams" element={<Teams />} />
-            <Route path="/:season/teams/:teamId" element={<TeamDetail />} />
-            <Route path="/:season/calendar" element={<Calendar />} />
-            <Route path="/:season/calendar/:matchId" element={<MatchDetail />} />
-            <Route path="/:season/live" element={<Live />} />
-            <Route path="*" element={<Navigate to={`/${DEFAULT_SEASON}/leaderboard`} replace />} />
-          </Routes>
+      <AdminProvider>
+        <div
+          style={{
+            minHeight: "100vh",
+            background: colors.background,
+            color: colors.primaryText,
+            fontFamily: "'Work Sans', sans-serif",
+          }}
+        >
+          <Header />
+          <div style={{ maxWidth: 1320, margin: "0 auto", padding: "clamp(14px,4vw,28px)" }}>
+            <Routes>
+              <Route path="/:season/standings" element={<Standings />} />
+              <Route
+                path="/:season/leaderboard"
+                element={
+                  <RequireAdmin>
+                    <Leaderboard />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="/:season/leaderboard/:playerId"
+                element={
+                  <RequireAdmin>
+                    <PlayerDetail />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="/:season/teams"
+                element={
+                  <RequireAdmin>
+                    <Teams />
+                  </RequireAdmin>
+                }
+              />
+              <Route path="/:season/teams/:teamId" element={<TeamDetail />} />
+              <Route path="/:season/calendar" element={<Calendar />} />
+              <Route path="/:season/calendar/:matchId" element={<MatchDetail />} />
+              <Route path="/:season/live" element={<Live />} />
+              <Route path="*" element={<Navigate to={`/${DEFAULT_SEASON}/standings`} replace />} />
+            </Routes>
+          </div>
         </div>
-      </div>
+      </AdminProvider>
     </HashRouter>
   );
 }

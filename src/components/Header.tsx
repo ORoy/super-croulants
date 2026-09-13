@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { colors } from "../theme/tokens";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useSeason } from "../hooks/useSeason";
+import { useAdmin } from "../context/AdminContext";
 import { SEASONS, DEFAULT_SEASON, type Season } from "../config/sheets";
 
 const NAV_ITEMS = [
   { label: "Classement", path: "standings" },
-  { label: "Joueurs", path: "leaderboard" },
-  { label: "Équipes", path: "teams" },
+  { label: "Joueurs", path: "leaderboard", adminOnly: true },
+  { label: "Équipes", path: "teams", adminOnly: true },
   { label: "Calendrier", path: "calendar" },
   { label: "En direct", path: "live", liveOnly: true },
 ];
@@ -88,12 +89,49 @@ export default function Header() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { season } = useSeason();
+  const { isAdmin, unlock, signOut } = useAdmin();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [seasonOpen, setSeasonOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState(false);
   const seasonPickerRef = useRef<HTMLDivElement>(null);
+  const adminPickerRef = useRef<HTMLDivElement>(null);
   const showMobileNav = isMobile && mobileNavOpen;
 
-  const visibleNavItems = NAV_ITEMS.filter(item => !item.liveOnly || season === DEFAULT_SEASON);
+  const visibleNavItems = NAV_ITEMS.filter(
+    item => (!item.liveOnly || season === DEFAULT_SEASON) && (!item.adminOnly || isAdmin)
+  );
+
+  const closeAdmin = () => {
+    setAdminOpen(false);
+    setAdminPassword("");
+    setAdminError(false);
+  };
+
+  const toggleAdmin = () => {
+    if (isAdmin) {
+      signOut();
+      closeAdmin();
+    } else {
+      setAdminOpen(open => !open);
+      setAdminError(false);
+    }
+  };
+
+  const submitAdmin = () => {
+    if (unlock(adminPassword)) {
+      closeAdmin();
+      navigate(`/${season}/leaderboard`);
+      setMobileNavOpen(false);
+    } else {
+      setAdminError(true);
+    }
+  };
+
+  const onAdminKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") submitAdmin();
+  };
 
   const isActive = (path: string) => location.pathname.startsWith(`/${season}/${path}`);
 
@@ -104,8 +142,8 @@ export default function Header() {
 
   const handleSeasonChange = (newSeason: Season) => {
     const [, , ...rest] = location.pathname.split("/");
-    const restPath = rest.join("/") || "leaderboard";
-    const target = restPath.startsWith("live") && newSeason !== DEFAULT_SEASON ? "leaderboard" : restPath;
+    const restPath = rest.join("/") || "standings";
+    const target = restPath.startsWith("live") && newSeason !== DEFAULT_SEASON ? "standings" : restPath;
     navigate(`/${newSeason}/${target}`);
     setSeasonOpen(false);
     setMobileNavOpen(false);
@@ -122,8 +160,122 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [seasonOpen]);
 
+  useEffect(() => {
+    if (!adminOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (!adminPickerRef.current?.contains(e.target as Node)) {
+        closeAdmin();
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [adminOpen]);
+
+  const adminPickerDesktop = (
+    <div ref={adminPickerRef} style={{ marginLeft: "auto", position: "relative", flexShrink: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          fontSize: 13,
+          color: "oklch(0.72 0.02 250)",
+          border: "1px solid oklch(0.3 0.02 250)",
+          borderRadius: 6,
+          padding: "6px 12px",
+          whiteSpace: "nowrap",
+          cursor: "pointer",
+        }}
+        onClick={toggleAdmin}
+      >
+        <span style={{ fontSize: 12 }}>{isAdmin ? "●" : "○"}</span>
+        <span style={{ fontWeight: 600 }}>{isAdmin ? "Admin — Déconnexion" : "Admin"}</span>
+      </div>
+      {adminOpen && (
+        <div
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "calc(100% + 6px)",
+            width: 250,
+            background: "oklch(0.19 0.02 250)",
+            border: "1px solid oklch(0.32 0.02 250)",
+            borderRadius: 8,
+            padding: 14,
+            boxShadow: "0 14px 34px rgba(0,0,0,0.45)",
+            zIndex: 25,
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, fontWeight: 700 }}>
+            Accès admin
+          </div>
+          <input
+            type="password"
+            placeholder="Mot de passe"
+            value={adminPassword}
+            onChange={e => {
+              setAdminPassword(e.target.value);
+              setAdminError(false);
+            }}
+            onKeyDown={onAdminKeyDown}
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              background: "oklch(0.14 0.02 250)",
+              border: "1px solid oklch(0.34 0.02 250)",
+              borderRadius: 6,
+              padding: "9px 11px",
+              fontSize: 13,
+              color: "oklch(0.95 0.01 250)",
+              outline: "none",
+              fontFamily: "inherit",
+            }}
+          />
+          {adminError && (
+            <div style={{ fontSize: 12, color: "oklch(0.72 0.16 25)" }}>Mot de passe incorrect.</div>
+          )}
+          <div style={{ display: "flex", gap: 8 }}>
+            <div
+              style={{
+                flex: 1,
+                textAlign: "center",
+                background: "oklch(0.3 0.03 250)",
+                borderRadius: 6,
+                padding: 9,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+              onClick={submitAdmin}
+            >
+              Déverrouiller
+            </div>
+            <div
+              style={{
+                flex: 1,
+                textAlign: "center",
+                border: "1px solid oklch(0.32 0.02 250)",
+                borderRadius: 6,
+                padding: 9,
+                fontSize: 13,
+                color: "oklch(0.72 0.02 250)",
+                cursor: "pointer",
+              }}
+              onClick={closeAdmin}
+            >
+              Annuler
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const seasonPickerDesktop = (
-    <div ref={seasonPickerRef} style={{ marginLeft: "auto", position: "relative", flexShrink: 0 }}>
+    <div ref={seasonPickerRef} style={{ position: "relative", flexShrink: 0 }}>
       <div
         style={{
           display: "flex",
@@ -205,6 +357,86 @@ export default function Header() {
     </div>
   );
 
+  const adminPickerMobile = (
+    <div style={{ marginTop: 14, paddingTop: 10, borderTop: "1px solid oklch(0.26 0.02 250)" }}>
+      <div
+        style={{
+          fontSize: 10,
+          letterSpacing: "2px",
+          textTransform: "uppercase",
+          color: "oklch(0.62 0.02 250)",
+          marginBottom: 6,
+        }}
+      >
+        Accès
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          border: "1px solid oklch(0.3 0.02 250)",
+          borderRadius: 8,
+          padding: "11px 12px",
+          minHeight: 44,
+          boxSizing: "border-box",
+          fontSize: 13,
+          color: "oklch(0.8 0.02 250)",
+          cursor: "pointer",
+        }}
+        onClick={toggleAdmin}
+      >
+        <span style={{ fontSize: 12 }}>{isAdmin ? "●" : "○"}</span>
+        <span style={{ fontWeight: 600 }}>{isAdmin ? "Admin — Déconnexion" : "Admin"}</span>
+      </div>
+      {adminOpen && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+          <input
+            type="password"
+            placeholder="Mot de passe"
+            value={adminPassword}
+            onChange={e => {
+              setAdminPassword(e.target.value);
+              setAdminError(false);
+            }}
+            onKeyDown={onAdminKeyDown}
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              background: "oklch(0.14 0.02 250)",
+              border: "1px solid oklch(0.34 0.02 250)",
+              borderRadius: 6,
+              padding: 11,
+              fontSize: 13,
+              color: "oklch(0.95 0.01 250)",
+              outline: "none",
+              fontFamily: "inherit",
+            }}
+          />
+          {adminError && (
+            <div style={{ fontSize: 12, color: "oklch(0.72 0.16 25)" }}>Mot de passe incorrect.</div>
+          )}
+          <div
+            style={{
+              textAlign: "center",
+              background: "oklch(0.3 0.03 250)",
+              borderRadius: 6,
+              padding: 12,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              minHeight: 44,
+              boxSizing: "border-box",
+            }}
+            onClick={submitAdmin}
+          >
+            Déverrouiller
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -234,7 +466,7 @@ export default function Header() {
             minWidth: 0,
             cursor: "pointer",
           }}
-          onClick={() => handleNavigate("leaderboard")}
+          onClick={() => handleNavigate("standings")}
         >
           <div style={logoStyle}>
             <span
@@ -313,6 +545,7 @@ export default function Header() {
                 </div>
               ))}
             </div>
+            {adminPickerDesktop}
             {seasonPickerDesktop}
           </>
         )}
@@ -338,6 +571,7 @@ export default function Header() {
             </div>
           ))}
           {seasonPickerMobile}
+          {adminPickerMobile}
         </div>
       )}
     </div>
