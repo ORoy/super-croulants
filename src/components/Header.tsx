@@ -100,7 +100,9 @@ export default function Header() {
   const showMobileNav = isMobile && mobileNavOpen;
 
   const visibleNavItems = NAV_ITEMS.filter(
-    item => (!item.liveOnly || season === DEFAULT_SEASON) && (!item.adminOnly || isAdmin)
+    item =>
+      (!item.liveOnly || season === DEFAULT_SEASON) &&
+      (!item.adminOnly || isAdmin || season !== DEFAULT_SEASON)
   );
 
   const closeAdmin = () => {
