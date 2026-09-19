@@ -9,7 +9,7 @@ export default function Sponsors() {
           Commanditaires
         </div>
         <div style={{ fontSize: 13, color: colors.mutedText }}>
-          Merci à nos commanditaires · Super Croulants
+          Merci à nos commanditaires
         </div>
       </div>
 
