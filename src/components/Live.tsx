@@ -1,11 +1,13 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo, type CSSProperties, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSheetRawData } from "../hooks/useSheetData";
 import { useTeamColors } from "../hooks/useTeamColors";
 import { useSeason } from "../hooks/useSeason";
-import { liveMatchSheet } from "../config/sheets";
+import { calendarTabs, liveMatchSheet } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { parseLiveGames, computeStandouts, type LiveGame, type LiveStandout } from "../utils/liveMatches";
+import { transformMatches } from "../utils/matches";
+import { equalsIgnoreCase } from "../utils/textMatch";
 import { encodePlayerId } from "../utils/playerId";
 import TeamLogo from "./TeamLogo";
 
@@ -35,10 +37,11 @@ const standoutNote = (standout: LiveStandout): string => {
 
 interface LiveGameCardProps {
   game: LiveGame;
+  matchId: string | undefined;
   getTeamColor: ReturnType<typeof useTeamColors>["getTeamColor"];
 }
 
-function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
+function LiveGameCard({ game, matchId, getTeamColor }: LiveGameCardProps) {
   const navigate = useNavigate();
   const { season } = useSeason();
   const standouts = useMemo(
@@ -46,7 +49,11 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
     [game]
   );
 
-  const goToTeam = (team: string) => () => navigate(`/${season}/teams/${encodeURIComponent(team)}`);
+  const goToTeam = (team: string) => (e: MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/${season}/teams/${encodeURIComponent(team)}`);
+  };
+  const goToMatch = matchId ? () => navigate(`/${season}/calendar/${matchId}`) : undefined;
 
   const awayColor = getTeamColor(game.away.name);
   const homeColor = getTeamColor(game.home.name);
@@ -58,12 +65,14 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
   return (
     <div style={{ marginBottom: 32 }}>
       <div
+        onClick={goToMatch}
         style={{
           background: colors.cardBackground,
           border: `1px solid ${colors.border}`,
           borderRadius: 10,
           padding: 26,
           marginBottom: 28,
+          cursor: goToMatch ? "pointer" : undefined,
         }}
       >
         <div
@@ -250,6 +259,9 @@ export default function Live() {
     liveMatchSheet(season),
     POLL_INTERVAL_MS
   );
+  // Supplementary: only used to link the live card to its Match Detail page,
+  // so its own loading/error state doesn't block the live view.
+  const { data: calendarRawData } = useSheetRawData(spreadsheetId, calendarTabs(season)[0]);
   const { getTeamColor, loading: colorsLoading, error: colorsError } = useTeamColors();
 
   // Only one game is ever actually live at a time; if more than one block
@@ -266,6 +278,17 @@ export default function Live() {
     }, null);
     return latest ? [latest] : [];
   }, [rawData, season]);
+
+  const matchIdFor = useMemo(() => {
+    const matches = transformMatches(calendarRawData);
+    return (game: LiveGame): string | undefined =>
+      matches.find(
+        m =>
+          m.date === game.date &&
+          equalsIgnoreCase(m.awayTeam, game.away.name) &&
+          equalsIgnoreCase(m.homeTeam, game.home.name)
+      )?.id;
+  }, [calendarRawData]);
 
   // Background polling refetches flip `loading` back to true every cycle;
   // only show the full-page loading state before the first successful
@@ -315,7 +338,9 @@ export default function Live() {
             Aucun match en direct pour le moment.
           </div>
         ) : (
-          liveGames.map(game => <LiveGameCard key={game.id} game={game} getTeamColor={getTeamColor} />)
+          liveGames.map(game => (
+            <LiveGameCard key={game.id} game={game} matchId={matchIdFor(game)} getTeamColor={getTeamColor} />
+          ))
         )
       )}
     </div>

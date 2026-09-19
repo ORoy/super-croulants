@@ -7,11 +7,33 @@ import { useSeason } from "../hooks/useSeason";
 import { calendarTabs, liveMatchSheet } from "../config/sheets";
 import { transformMatches } from "../utils/matches";
 import { findStarsForDate } from "../utils/stars";
-import { parseLiveGames, findFinishedGame, periodScores } from "../utils/liveMatches";
+import { parseLiveGames, findGameForMatch, periodScores, gameEvents, type GameEvent } from "../utils/liveMatches";
 import { colors } from "../theme/tokens";
 import { encodePlayerId } from "../utils/playerId";
 import DetailPageStatus from "./DetailPageStatus";
 import TeamLogo from "./TeamLogo";
+
+const POLL_INTERVAL_MS = 30_000;
+
+const sectionTitleStyle: CSSProperties = {
+  fontFamily: "'Barlow Condensed', sans-serif",
+  fontSize: 20,
+  fontWeight: 700,
+  marginBottom: 10,
+};
+
+const statLabelStyle: CSSProperties = {
+  textAlign: "center",
+  color: colors.mutedText,
+  fontSize: 12,
+  letterSpacing: "1px",
+  textTransform: "uppercase",
+};
+
+const eventTypeStyle = (type: GameEvent["type"]): CSSProperties => ({
+  fontWeight: 700,
+  color: type === "goal" ? colors.positive : colors.error,
+});
 
 const starCardStyle: CSSProperties = {
   background: colors.cardBackground,
@@ -38,26 +60,43 @@ export default function MatchDetail() {
   useSheetBatch(spreadsheetId, matchDetailRanges);
   const matchesResult = useSheetRawData(spreadsheetId, matchesRange);
   const starsResult = useSheetRawData(spreadsheetId, starsRange);
-  const matchSheetResult = useSheetRawData(spreadsheetId, matchSheetRange);
-  const teamColors = useTeamColors();
-  const { getTeamColor } = teamColors;
-
   const match = useMemo(
     () => transformMatches(matchesResult.data).find(m => m.id === matchId),
     [matchesResult.data, matchId]
   );
+  // A match without a final score yet could be currently live, so keep
+  // polling its scoresheet until the Calendar sheet marks it played; a
+  // finished match's scoresheet won't change again.
+  const matchSheetResult = useSheetRawData(
+    spreadsheetId,
+    matchSheetRange,
+    match && !match.played ? POLL_INTERVAL_MS : undefined
+  );
+  const teamColors = useTeamColors();
+  const { getTeamColor } = teamColors;
 
   const stars = useMemo(
     () => (match ? findStarsForDate(starsResult.data, match.date) : []),
     [starsResult.data, match]
   );
 
-  const periods = useMemo(() => {
-    if (!match || !match.played) return null;
+  // Whatever the scoresheet has for this match — live, finished, or not
+  // found — every section below just renders what's there instead of
+  // branching on match.played.
+  const game = useMemo(() => {
+    if (!match) return null;
     const games = parseLiveGames(matchSheetResult.data, season);
-    const game = findFinishedGame(games, match.date, match.awayTeam, match.homeTeam);
-    return game ? periodScores(game) : null;
+    return findGameForMatch(games, match.date, match.awayTeam, match.homeTeam) ?? null;
   }, [matchSheetResult.data, match, season]);
+
+  const isLive = !!game?.isInProgress;
+  // A future match's block can already exist in the sheet (empty, pre-
+  // created ahead of time) — only treat the game as having data once it's
+  // actually started, not merely because a matching block was found.
+  const hasStarted = !!game && (game.isInProgress || game.isFinished);
+
+  const periods = useMemo(() => (hasStarted && game ? periodScores(game) : null), [hasStarted, game]);
+  const events = useMemo(() => (hasStarted && game ? gameEvents(game) : []), [hasStarted, game]);
 
   const { loading, error } = combineFetchStates(matchesResult, starsResult, matchSheetResult, teamColors);
 
@@ -87,10 +126,35 @@ export default function MatchDetail() {
   return (
     <div>
       {backLink}
-      <div style={{ fontSize: 13, color: colors.mutedText, marginBottom: 6 }}>
-        {match.date}
-        {match.hour && ` · ${match.hour}`} · {match.status}
-      </div>
+      {isLive ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+          <div
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              background: colors.error,
+              animation: "live-pulse 1.2s ease-in-out infinite",
+            }}
+          />
+          <div
+            style={{
+              fontSize: 12,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              color: colors.error,
+              fontWeight: 700,
+            }}
+          >
+            {`Période ${game!.period}`}
+          </div>
+        </div>
+      ) : (
+        <div style={{ fontSize: 13, color: colors.mutedText, marginBottom: 6 }}>
+          {match.date}
+          {match.hour && ` · ${match.hour}`} · {match.status}
+        </div>
+      )}
       <div
         style={{
           display: "grid",
@@ -125,11 +189,11 @@ export default function MatchDetail() {
             fontFamily: "'Barlow Condensed', sans-serif",
             fontSize: "clamp(28px,7vw,44px)",
             fontWeight: 800,
-            color: match.played ? colors.accent : colors.primaryText,
+            color: match.played || isLive ? colors.accent : colors.primaryText,
             whiteSpace: "nowrap",
           }}
         >
-          {match.resultLabel}
+          {isLive ? `${game!.awayScore} – ${game!.homeScore}` : match.resultLabel}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
           <TeamLogo teamName={match.homeTeam} color={homeColor} size={40} />
@@ -174,6 +238,66 @@ export default function MatchDetail() {
             </span>
           </div>
         </div>
+      )}
+
+      {hasStarted && game && (
+        <>
+          <div style={sectionTitleStyle}>Statistiques</div>
+          <div
+            style={{
+              background: colors.cardBackground,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 10,
+              overflowX: "auto",
+              marginBottom: 28,
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 90px 1fr",
+                padding: "10px 16px",
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 12,
+                letterSpacing: "1px",
+                textTransform: "uppercase",
+                color: colors.mutedText,
+                borderBottom: `1px solid ${colors.border}`,
+              }}
+            >
+              <div>{match.awayTeam}</div>
+              <div style={{ textAlign: "center" }}>Stat</div>
+              <div style={{ textAlign: "right" }}>{match.homeTeam}</div>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 90px 1fr",
+                padding: "12px 16px",
+                fontSize: 15,
+                alignItems: "center",
+                borderBottom: "1px solid oklch(0.23 0.02 250)",
+              }}
+            >
+              <div style={{ fontWeight: 700 }}>{game.away.shotsTotal || "0"}</div>
+              <div style={statLabelStyle}>Tirs</div>
+              <div style={{ fontWeight: 700, textAlign: "right" }}>{game.home.shotsTotal || "0"}</div>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 90px 1fr",
+                padding: "12px 16px",
+                fontSize: 15,
+                alignItems: "center",
+              }}
+            >
+              <div style={{ fontWeight: 700 }}>{game.away.penalties.length * 2}</div>
+              <div style={statLabelStyle}>Pén (min)</div>
+              <div style={{ fontWeight: 700, textAlign: "right" }}>{game.home.penalties.length * 2}</div>
+            </div>
+          </div>
+        </>
       )}
 
       {periods && (
@@ -233,7 +357,7 @@ export default function MatchDetail() {
                   {p.away}
                 </div>
               ))}
-              <div style={{ fontWeight: 700 }}>{match.awayScore}</div>
+              <div style={{ fontWeight: 700 }}>{match.awayScore ?? game!.awayScore}</div>
               <div style={{ fontWeight: 700 }}>{match.awayPtsFS ?? "–"}</div>
             </div>
             <div
@@ -257,9 +381,73 @@ export default function MatchDetail() {
                   {p.home}
                 </div>
               ))}
-              <div style={{ fontWeight: 700 }}>{match.homeScore}</div>
+              <div style={{ fontWeight: 700 }}>{match.homeScore ?? game!.homeScore}</div>
               <div style={{ fontWeight: 700 }}>{match.homePtsFS ?? "–"}</div>
             </div>
+          </div>
+        </>
+      )}
+
+      {hasStarted && (
+        <>
+          <div style={sectionTitleStyle}>Évènements du match</div>
+          <div
+            style={{
+              background: colors.cardBackground,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 10,
+              overflowX: "auto",
+              marginBottom: 28,
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "60px 80px 80px 1fr 1.3fr 1.8fr",
+                minWidth: 640,
+                padding: "10px 16px",
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 12,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                color: colors.mutedText,
+                borderBottom: `1px solid ${colors.border}`,
+              }}
+            >
+              <div>Pér</div>
+              <div>Temps</div>
+              <div>Type</div>
+              <div>Équipe</div>
+              <div>Joueur</div>
+              <div>Détail</div>
+            </div>
+            {events.length === 0 ? (
+              <div style={{ padding: 16, fontSize: 13, color: colors.mutedText }}>Aucun évènement enregistré.</div>
+            ) : (
+              events.map((e, index) => (
+                <div
+                  key={`${e.type}-${e.period}-${e.time}-${e.playerNumber}-${index}`}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "60px 80px 80px 1fr 1.3fr 1.8fr",
+                    minWidth: 640,
+                    padding: "10px 16px",
+                    fontSize: 14,
+                    alignItems: "center",
+                    borderBottom: "1px solid oklch(0.23 0.02 250)",
+                  }}
+                >
+                  <div style={{ color: colors.mutedText }}>{e.period}</div>
+                  <div style={{ color: colors.mutedText }}>{e.time}</div>
+                  <div style={eventTypeStyle(e.type)}>{e.type === "goal" ? "But" : "Pénalité"}</div>
+                  <div>{e.teamName}</div>
+                  <div style={{ fontWeight: 600 }}>
+                    #{e.playerNumber} {e.playerName}
+                  </div>
+                  <div style={{ color: colors.mutedText }}>{e.detail}</div>
+                </div>
+              ))
+            )}
           </div>
         </>
       )}

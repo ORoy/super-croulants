@@ -266,10 +266,12 @@ export const parseLiveGames = (rows: string[][], season: Season): LiveGame[] => 
   return games;
 };
 
-// Finds a completed game's `Feuilles de match` block for Match Detail's
-// "Score by Period" table (ticket 09), matching Calendrier's "Matchs" data
-// (date + team names) to the corresponding scoresheet block.
-export const findFinishedGame = (
+// Finds a game's `Feuilles de match` block for Match Detail, matching
+// Calendrier's "Matchs" data (date + team names) to the corresponding
+// scoresheet block — live, finished, or (once a scoresheet exists) neither.
+// Not filtered by isFinished/isInProgress: Match Detail renders whatever the
+// block has, regardless of the game's state.
+export const findGameForMatch = (
   games: LiveGame[],
   date: string,
   awayTeam: string,
@@ -277,10 +279,9 @@ export const findFinishedGame = (
 ): LiveGame | undefined =>
   games.find(
     game =>
-      game.isFinished &&
       game.date === date &&
-      game.away.name === awayTeam &&
-      game.home.name === homeTeam
+      equalsIgnoreCase(game.away.name, awayTeam) &&
+      equalsIgnoreCase(game.home.name, homeTeam)
   );
 
 export interface PeriodScoreRow {
@@ -298,6 +299,59 @@ export const periodScores = (game: LiveGame): PeriodScoreRow[] =>
     away: game.away.goals.filter(g => g.period === period).length,
     home: game.home.goals.filter(g => g.period === period).length,
   }));
+
+export interface GameEvent {
+  type: "goal" | "penalty";
+  period: number;
+  time: string;
+  teamName: string;
+  playerNumber: string;
+  playerName: string;
+  detail: string;
+}
+
+// "Temps" is elapsed time within the period (mm:ss), not zero-padded —
+// parse to seconds so e.g. "9:05" sorts before "10:02".
+const timeToSeconds = (time: string): number => {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+  if (!match) return 0;
+  return Number(match[1]) * 60 + Number(match[2]);
+};
+
+const teamGameEvents = (team: LiveTeam, teamName: string): GameEvent[] => {
+  const goalEvents: GameEvent[] = team.goals.map(goal => {
+    const assistNames = goal.assistNumbers
+      .map(number => team.roster.get(number))
+      .filter((name): name is string => Boolean(name));
+    return {
+      type: "goal",
+      period: goal.period,
+      time: goal.time,
+      teamName,
+      playerNumber: goal.scorerNumber,
+      playerName: team.roster.get(goal.scorerNumber) ?? goal.scorerNumber,
+      detail: assistNames.length ? `Passe : ${assistNames.join(", ")}` : "Sans aide",
+    };
+  });
+
+  const penaltyEvents: GameEvent[] = team.penalties.map(penalty => ({
+    type: "penalty",
+    period: penalty.period,
+    time: penalty.time,
+    teamName,
+    playerNumber: penalty.playerNumber,
+    playerName: team.roster.get(penalty.playerNumber) ?? penalty.playerNumber,
+    detail: penalty.infraction,
+  }));
+
+  return [...goalEvents, ...penaltyEvents];
+};
+
+// Chronological goal/penalty list for Match Detail's "Évènements" table.
+export const gameEvents = (game: LiveGame): GameEvent[] =>
+  [...teamGameEvents(game.home, game.home.name), ...teamGameEvents(game.away, game.away.name)].sort(
+    (a, b) => a.period - b.period || timeToSeconds(a.time) - timeToSeconds(b.time)
+  );
 
 const bumpStandout = (
   map: Map<string, LiveStandout>,
