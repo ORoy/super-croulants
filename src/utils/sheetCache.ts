@@ -69,6 +69,10 @@ export function getSnapshot<T>(key: string): Snapshot<T> {
   return getEntry<T>(key).snapshot;
 }
 
+export function getLastFetchedAt(key: string): number | undefined {
+  return cache.get(key)?.lastFetchedAt;
+}
+
 // No-op if `key` is already loading or holds a successful result, unless
 // `force` (used for tab-focus-regain and polling refreshes).
 export function ensureLoaded<T>(key: string, fetcher: () => Promise<T>, force = false): void {

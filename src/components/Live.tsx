@@ -245,7 +245,7 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
 
 export default function Live() {
   const { season, spreadsheetId } = useSeason();
-  const { data: rawData, loading, error } = useSheetRawData(
+  const { data: rawData, loading, error, lastFetchedAt } = useSheetRawData(
     spreadsheetId,
     liveMatchSheet(season),
     POLL_INTERVAL_MS
@@ -285,6 +285,12 @@ export default function Live() {
         <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800 }}>
           Matchs en direct
         </div>
+        {lastFetchedAt && (
+          <div style={{ marginLeft: "auto", color: colors.subtleText, fontSize: 12 }}>
+            Mis à jour à{" "}
+            {new Date(lastFetchedAt).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}
+          </div>
+        )}
       </div>
 
       {isLoading && <div style={{ color: colors.mutedText, fontSize: 14 }}>Chargement…</div>}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useReducer } from "react";
 import { fetchSheetData, fetchSheetRawData } from "../utils/sheetFetch";
 import type { RowData } from "../utils/sheetFetch";
 import type { SheetRange } from "../config/sheets";
-import { subscribeKey, getSnapshot, ensureLoaded, makeKey } from "../utils/sheetCache";
+import { subscribeKey, getSnapshot, ensureLoaded, makeKey, getLastFetchedAt } from "../utils/sheetCache";
 
 const bumpCounter = (count: number) => count + 1;
 
@@ -73,7 +73,7 @@ export const useSheetRawData = (
   spreadsheetId: string,
   { range, sheetName }: SheetRange,
   refetchIntervalMs?: number
-): UseFetchResult<string[][]> => {
+): UseFetchResult<string[][]> & { lastFetchedAt: number | null } => {
   const apiKey = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY;
   const key = makeKey("raw", spreadsheetId, sheetName, range);
   const fetcher = useCallback(
@@ -96,5 +96,5 @@ export const useSheetRawData = (
     return () => clearInterval(intervalId);
   }, [key, fetcher, refetchIntervalMs]);
 
-  return result;
+  return { ...result, lastFetchedAt: getLastFetchedAt(key) ?? null };
 };
