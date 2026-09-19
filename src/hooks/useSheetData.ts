@@ -50,7 +50,10 @@ function useCachedSheet<T>(key: string, fetcher: () => Promise<T>, initialValue:
 
   const snapshot = getSnapshot<T>(key);
   return {
-    data: snapshot.status === "success" ? (snapshot.data as T) : initialValue,
+    // A poll refetch (or an error) flips status away from "success" but the
+    // cache keeps the last-fetched data around (see sheetCache.ts) — use it
+    // whenever we have it so a background refresh doesn't blank the page.
+    data: snapshot.data !== undefined ? (snapshot.data as T) : initialValue,
     loading: snapshot.status === "loading" || snapshot.status === "idle",
     error: snapshot.error,
   };
