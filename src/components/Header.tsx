@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { label: "Équipes", path: "teams", adminOnly: true },
   { label: "Calendrier", path: "calendar" },
   { label: "En direct", path: "live", liveOnly: true },
+  { label: "Commanditaires", path: "sponsors", standalone: true },
 ];
 
 const TAB_BASE: CSSProperties = {
@@ -135,10 +136,11 @@ export default function Header() {
     if (e.key === "Enter") submitAdmin();
   };
 
-  const isActive = (path: string) => location.pathname.startsWith(`/${season}/${path}`);
+  const isActive = (path: string, standalone?: boolean) =>
+    standalone ? location.pathname.startsWith(`/${path}`) : location.pathname.startsWith(`/${season}/${path}`);
 
-  const handleNavigate = (path: string) => {
-    navigate(`/${season}/${path}`);
+  const handleNavigate = (path: string, standalone?: boolean) => {
+    navigate(standalone ? `/${path}` : `/${season}/${path}`);
     setMobileNavOpen(false);
   };
 
@@ -540,8 +542,8 @@ export default function Header() {
               {visibleNavItems.map((item) => (
                 <div
                   key={item.path}
-                  style={isActive(item.path) ? TAB_ACTIVE : TAB_INACTIVE}
-                  onClick={() => handleNavigate(item.path)}
+                  style={isActive(item.path, item.standalone) ? TAB_ACTIVE : TAB_INACTIVE}
+                  onClick={() => handleNavigate(item.path, item.standalone)}
                 >
                   {item.label}
                 </div>
@@ -566,8 +568,8 @@ export default function Header() {
           {visibleNavItems.map((item) => (
             <div
               key={item.path}
-              style={isActive(item.path) ? TAB_ACTIVE_MOBILE : TAB_INACTIVE_MOBILE}
-              onClick={() => handleNavigate(item.path)}
+              style={isActive(item.path, item.standalone) ? TAB_ACTIVE_MOBILE : TAB_INACTIVE_MOBILE}
+              onClick={() => handleNavigate(item.path, item.standalone)}
             >
               {item.label}
             </div>

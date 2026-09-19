@@ -8,6 +8,7 @@ import Teams from "./components/Teams";
 import TeamDetail from "./components/TeamDetail";
 import MatchDetail from "./components/MatchDetail";
 import PlayerDetail from "./components/PlayerDetail";
+import Sponsors from "./components/Sponsors";
 import RequireAdmin from "./components/RequireAdmin";
 import { AdminProvider } from "./context/AdminContext";
 import { colors } from "./theme/tokens";
@@ -57,6 +58,7 @@ export default function App() {
               <Route path="/:season/calendar" element={<Calendar />} />
               <Route path="/:season/calendar/:matchId" element={<MatchDetail />} />
               <Route path="/:season/live" element={<Live />} />
+              <Route path="/sponsors" element={<Sponsors />} />
               <Route path="*" element={<Navigate to={`/${DEFAULT_SEASON}/standings`} replace />} />
             </Routes>
           </div>
