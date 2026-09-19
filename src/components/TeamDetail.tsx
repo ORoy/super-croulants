@@ -5,7 +5,8 @@ import { useSheetRawData, useSheetData, combineFetchStates } from "../hooks/useS
 import { useSheetBatch, type BatchRange } from "../hooks/useSheetBatch";
 import { useTeamColors } from "../hooks/useTeamColors";
 import { useSeason } from "../hooks/useSeason";
-import { playerTabs, standingsSheet } from "../config/sheets";
+import { useAdmin } from "../context/AdminContext";
+import { DEFAULT_SEASON, playerTabs, standingsSheet } from "../config/sheets";
 import { SECTION_TITLES, parseStandingsSection } from "../utils/standings";
 import { normalizeRow } from "../utils/normalizeRow";
 import { equalsIgnoreCase } from "../utils/textMatch";
@@ -15,8 +16,7 @@ import DetailPageStatus from "./DetailPageStatus";
 import StatCard from "./StatCard";
 import TeamLogo from "./TeamLogo";
 
-const ROSTER_COLUMNS: TableColumn[] = [
-  { key: "RANG", label: "RANG" },
+const ROSTER_COLUMNS_BASE: TableColumn[] = [
   { key: "JOUEURS", label: "JOUEUR" },
   { key: "PTS", label: "PTS" },
   { key: "BUTS", label: "BUTS" },
@@ -25,10 +25,16 @@ const ROSTER_COLUMNS: TableColumn[] = [
   { key: "MOY PTS/ Match", label: "MOY PTS/MATCH" },
 ];
 
+const ROSTER_COLUMNS_WITH_RANK: TableColumn[] = [
+  { key: "RANG", label: "RANG" },
+  ...ROSTER_COLUMNS_BASE,
+];
+
 export default function TeamDetail() {
   const { teamId = "" } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
   const { season, spreadsheetId } = useSeason();
+  const { isAdmin } = useAdmin();
   const decodedTeamId = decodeURIComponent(teamId);
 
   const standingsRange = standingsSheet(season);
@@ -120,7 +126,7 @@ export default function TeamDetail() {
       ) : (
         <StatTable
           key={decodedTeamId}
-          columns={ROSTER_COLUMNS}
+          columns={season === DEFAULT_SEASON && !isAdmin ? ROSTER_COLUMNS_BASE : ROSTER_COLUMNS_WITH_RANK}
           rows={roster}
           onRowClick={row => {
             const name = row["JOUEURS"];
