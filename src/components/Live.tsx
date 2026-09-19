@@ -77,7 +77,7 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
             marginBottom: 14,
           }}
         >
-          {game.hasScoresheetData ? `Période ${game.period}` : "En attente de la feuille de match"}
+          {`Période ${game.period}`}
         </div>
         <div
           style={{
@@ -267,7 +267,11 @@ export default function Live() {
     return latest ? [latest] : [];
   }, [rawData, season]);
 
-  const isLoading = loading || colorsLoading;
+  // Background polling refetches flip `loading` back to true every cycle;
+  // only show the full-page loading state before the first successful
+  // fetch, so a poll tick updates the timestamp label without blanking
+  // out the already-rendered game.
+  const isLoading = (loading && !lastFetchedAt) || colorsLoading;
   const loadError = error || colorsError;
 
   return (

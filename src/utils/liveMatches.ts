@@ -131,7 +131,6 @@ export interface LiveGame {
   scheduledStart: Date | null;
   isInProgress: boolean;
   isFinished: boolean;
-  hasScoresheetData: boolean;
 }
 
 export interface PlayerGameLogRow {
@@ -239,17 +238,6 @@ export const parseLiveGames = (rows: string[][], season: Season): LiveGame[] => 
 
     // Confirmed done-signal: period-3 shots-on-goal filled in for either team.
     const isFinished = periodFilled(home, away, 2);
-    // Whether anyone has actually typed anything into the scoresheet yet —
-    // no longer what gates "in progress" (that's the schedule, below), but
-    // still what the live screen uses to tell a real 0-0 from a game that
-    // just hasn't been scored yet (ticket 14).
-    const hasScoresheetData =
-      home.shotsByPeriod[0] !== "" ||
-      away.shotsByPeriod[0] !== "" ||
-      home.goals.length > 0 ||
-      away.goals.length > 0 ||
-      home.penalties.length > 0 ||
-      away.penalties.length > 0;
 
     const scheduledStart = parseScheduledStart(date, time, season);
     const isInProgress =
@@ -272,7 +260,6 @@ export const parseLiveGames = (rows: string[][], season: Season): LiveGame[] => 
       scheduledStart,
       isInProgress,
       isFinished,
-      hasScoresheetData,
     });
   }
 
