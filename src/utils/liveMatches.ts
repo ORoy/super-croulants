@@ -320,9 +320,7 @@ const timeToSeconds = (time: string): number => {
 
 const teamGameEvents = (team: LiveTeam, teamName: string): GameEvent[] => {
   const goalEvents: GameEvent[] = team.goals.map(goal => {
-    const assistNames = goal.assistNumbers
-      .map(number => team.roster.get(number))
-      .filter((name): name is string => Boolean(name));
+    const assistNames = goal.assistNumbers.map(number => `#${number} ${team.roster.get(number) ?? number}`);
     return {
       type: "goal",
       period: goal.period,
