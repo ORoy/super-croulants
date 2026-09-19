@@ -16,7 +16,8 @@ import DetailPageStatus from "./DetailPageStatus";
 import StatCard from "./StatCard";
 import TeamLogo from "./TeamLogo";
 
-const ROSTER_COLUMNS_BASE: TableColumn[] = [
+const ROSTER_COLUMNS: TableColumn[] = [
+  { key: "RANG", label: "RANG" },
   { key: "JOUEURS", label: "JOUEUR" },
   { key: "PTS", label: "PTS" },
   { key: "BUTS", label: "BUTS" },
@@ -25,17 +26,16 @@ const ROSTER_COLUMNS_BASE: TableColumn[] = [
   { key: "MOY PTS/ Match", label: "MOY PTS/MATCH" },
 ];
 
-const ROSTER_COLUMNS_WITH_RANK: TableColumn[] = [
-  { key: "RANG", label: "RANG" },
-  ...ROSTER_COLUMNS_BASE,
-];
-
 export default function TeamDetail() {
   const { teamId = "" } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
   const { season, spreadsheetId } = useSeason();
   const { isAdmin } = useAdmin();
   const decodedTeamId = decodeURIComponent(teamId);
+  // Player-level stats are competitive-advantage info during the current
+  // season (see RequireAdmin); past seasons are historical record and stay
+  // open to everyone.
+  const showRoster = isAdmin || season !== DEFAULT_SEASON;
 
   const standingsRange = standingsSheet(season);
   const rosterRange = playerTabs.find(tab => tab.label === "Saison Régulière")!;
@@ -118,22 +118,26 @@ export default function TeamDetail() {
         <StatCard label="Buts contre" value={team.ga} align="left" padding={16} valueFontSize={26} />
       </div>
 
-      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>
-        Effectif
-      </div>
-      {roster.length === 0 ? (
-        <div style={{ color: colors.mutedText }}>Aucun joueur trouvé pour cette équipe.</div>
-      ) : (
-        <StatTable
-          key={decodedTeamId}
-          columns={season === DEFAULT_SEASON && !isAdmin ? ROSTER_COLUMNS_BASE : ROSTER_COLUMNS_WITH_RANK}
-          rows={roster}
-          onRowClick={row => {
-            const name = row["JOUEURS"];
-            if (!name) return;
-            navigate(`/${season}/leaderboard/${encodePlayerId(name, decodedTeamId)}`);
-          }}
-        />
+      {showRoster && (
+        <>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>
+            Effectif
+          </div>
+          {roster.length === 0 ? (
+            <div style={{ color: colors.mutedText }}>Aucun joueur trouvé pour cette équipe.</div>
+          ) : (
+            <StatTable
+              key={decodedTeamId}
+              columns={ROSTER_COLUMNS}
+              rows={roster}
+              onRowClick={row => {
+                const name = row["JOUEURS"];
+                if (!name) return;
+                navigate(`/${season}/leaderboard/${encodePlayerId(name, decodedTeamId)}`);
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );
