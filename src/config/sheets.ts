@@ -46,7 +46,7 @@ export const calendarTabs = (season: Season): (SheetRange & { label: string })[]
   const calendarSheetName = seasonSheetNames(season).calendar;
   return [
     { label: "Matchs", range: "B1:AB37", sheetName: calendarSheetName },
-    { label: "Étoiles", range: "U4:AA37", sheetName: calendarSheetName },
+    { label: "Étoiles", range: "U3:AA37", sheetName: calendarSheetName },
   ];
 };
 
