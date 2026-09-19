@@ -77,7 +77,7 @@ function LiveGameCard({ game, getTeamColor }: LiveGameCardProps) {
             marginBottom: 14,
           }}
         >
-          {game.hasScoresheetData ? `Période ${game.period ?? 1}` : "En attente de la feuille de match"}
+          {game.hasScoresheetData ? `Période ${game.period}` : "En attente de la feuille de match"}
         </div>
         <div
           style={{
@@ -252,10 +252,20 @@ export default function Live() {
   );
   const { getTeamColor, loading: colorsLoading, error: colorsError } = useTeamColors();
 
-  const liveGames = useMemo(
-    () => parseLiveGames(rawData, season).filter(game => game.isInProgress),
-    [rawData, season]
-  );
+  // Only one game is ever actually live at a time; if more than one block
+  // still reads as "in progress" (e.g. an old game's scoresheet never got
+  // marked finished and a newer game has since started), keep only the one
+  // that started most recently.
+  const liveGames = useMemo(() => {
+    const inProgress = parseLiveGames(rawData, season).filter(game => game.isInProgress);
+    const latest = inProgress.reduce<LiveGame | null>((latestSoFar, game) => {
+      if (!latestSoFar) return game;
+      if (!game.scheduledStart) return latestSoFar;
+      if (!latestSoFar.scheduledStart) return game;
+      return game.scheduledStart.getTime() > latestSoFar.scheduledStart.getTime() ? game : latestSoFar;
+    }, null);
+    return latest ? [latest] : [];
+  }, [rawData, season]);
 
   const isLoading = loading || colorsLoading;
   const loadError = error || colorsError;

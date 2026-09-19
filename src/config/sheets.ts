@@ -55,15 +55,15 @@ export const standingsSheet = (season: Season): SheetRange => ({
   sheetName: seasonSheetNames(season).standings,
 });
 
-// One 20-row block per game (home team at columns A-Q, visiting team at the
-// same layout shifted to CF-CV — see src/utils/liveMatches.ts). Last row
-// bound covers each season's full season + séries block count.
-const MATCH_SHEET_LAST_ROW: Record<Season, number> = {
-  "2025-26": 1146,
-  "2026-27": 1140,
-};
-
+// One ~20-row block per game (home team at columns E-CE, visiting team at the
+// same layout shifted to CF-DB — see src/utils/liveMatches.ts). Open-ended
+// range: seasons don't share a row layout (e.g. 2025-26 has 3 leading 2-row
+// holiday-placeholder blocks that 2026-27 doesn't, which used to make a
+// hand-picked row bound silently wrong for one season or the other) —
+// liveMatches.ts locates each game's block by scanning for its own "Date:"
+// marker rather than trusting a fixed offset, so this just needs to cover
+// the whole tab.
 export const liveMatchSheet = (season: Season): SheetRange => ({
-  range: `E7:DB${MATCH_SHEET_LAST_ROW[season]}`,
+  range: "E:DB",
   sheetName: seasonSheetNames(season).matchSheets,
 });

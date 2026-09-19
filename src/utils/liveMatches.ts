@@ -1,7 +1,7 @@
 import { equalsIgnoreCase } from "./textMatch";
 import type { Season } from "../config/sheets";
 
-// Parses "Feuilles de match" — a per-game scoresheet layout, one 20-row
+// Parses "Feuilles de match" — a per-game scoresheet layout, one ~20-row
 // block per game. Each block holds two team sub-blocks side by side: the
 // home team at column offset 0, the visiting team at column offset 83
 // (same internal layout, just shifted right). Column offsets below were
@@ -9,10 +9,19 @@ import type { Season } from "../config/sheets";
 // row 1 = "Date:"/date, row 2 = "Heure:"/time + shots-on-goal totals,
 // row 3 = team name, rows 6-19 = one player per row (lineup, and — only on
 // rows where they occurred — that player's penalty and/or goal).
+//
+// Blocks are NOT assumed to sit at fixed 20-row intervals from the top of
+// the fetched range: a season's sheet can have a different number of leading
+// rows (e.g. 2025-26 has 3 short 2-row holiday-placeholder blocks before its
+// first real game; 2026-27 has none), which silently broke every block
+// boundary downstream when the fetch range's start row didn't happen to line
+// up. Instead each block is located by scanning for its own "Date:" marker
+// (see findBlockStarts) — self-correcting regardless of what precedes it.
 const BLOCK_ROWS = 20;
 const VISITOR_COL_OFFSET = 83;
 const PLAYER_ROW_START = 5;
 const PLAYER_ROW_END = 19; // exclusive
+const DATE_LABEL_COL = 0; // column E, home side only — label isn't duplicated on the away side
 
 const TEAM_NAME_ROW = 2;
 const SHOTS_ROW = 1;
@@ -35,7 +44,7 @@ const GOAL_ASSIST_COLS = [15, 16] as const;
 // A game counts as "in progress" from its scheduled Heure onward (see ticket
 // 14) until the scoresheet is marked finished, or after this long if it never
 // is — a backstop for a postponed/never-scored game, not the normal path.
-const LIVE_WINDOW_MS = 3 * 60 * 60 * 1000;
+const LIVE_WINDOW_MS = 2 * 60 * 60 * 1000;
 
 const EASTERN_TIME_ZONE = "America/Toronto";
 
@@ -118,7 +127,8 @@ export interface LiveGame {
   home: LiveTeam;
   awayScore: number;
   homeScore: number;
-  period: number | null;
+  period: number;
+  scheduledStart: Date | null;
   isInProgress: boolean;
   isFinished: boolean;
   hasScoresheetData: boolean;
@@ -181,30 +191,43 @@ const parseTeamBlock = (block: string[][], colOffset: number): LiveTeam => {
   return { name, shotsByPeriod, shotsTotal, goals, penalties, roster };
 };
 
-// The latest period with any logged activity — the sheet has no live clock,
-// only period-anchored event timestamps (see ticket 08).
-const currentPeriod = (home: LiveTeam, away: LiveTeam): number | null => {
-  let latest = 0;
-  for (const period of [1, 2, 3]) {
-    const idx = period - 1;
-    const hasActivity =
-      home.shotsByPeriod[idx] !== "" ||
-      away.shotsByPeriod[idx] !== "" ||
-      home.goals.some(g => g.period === period) ||
-      away.goals.some(g => g.period === period) ||
-      home.penalties.some(p => p.period === period) ||
-      away.penalties.some(p => p.period === period);
-    if (hasActivity) latest = period;
+// Finds every game block's start row by scanning for its "Date:" marker,
+// rather than assuming blocks sit at fixed BLOCK_ROWS intervals from the top
+// of the fetched range (see the header comment above — that assumption broke
+// whenever a season's sheet had a different number of leading rows).
+const findBlockStarts = (rows: string[][]): number[] => {
+  const starts: number[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    if ((rows[i]?.[DATE_LABEL_COL] ?? "").trim() === "Date:") starts.push(i);
   }
-  return latest || null;
+  return starts;
+};
+
+// Whether either team's shots-on-goal total for `periodIndex` (0/1/2) has
+// been filled in — the sheet's only per-period "this part is done" signal,
+// checked on both sides since either scorekeeper filling in their side first
+// is enough to trust the period turned over (ticket 14 grilling session).
+const periodFilled = (home: LiveTeam, away: LiveTeam, periodIndex: number): boolean =>
+  home.shotsByPeriod[periodIndex] !== "" || away.shotsByPeriod[periodIndex] !== "";
+
+// The current period, derived from which period-shots columns are filled
+// (R/S/T on the Heure row) rather than from logged goals/penalties — the
+// sheet has no live clock, only these three per-period totals.
+const currentPeriod = (home: LiveTeam, away: LiveTeam): number => {
+  if (periodFilled(home, away, 1)) return 3; // period 2's total is in -> period 3
+  if (periodFilled(home, away, 0)) return 2; // period 1's total is in -> period 2
+  return 1;
 };
 
 export const parseLiveGames = (rows: string[][], season: Season): LiveGame[] => {
   const games: LiveGame[] = [];
   const now = easternNow();
+  const blockStarts = findBlockStarts(rows);
 
-  for (let start = 0; start + BLOCK_ROWS <= rows.length; start += BLOCK_ROWS) {
-    const block = rows.slice(start, start + BLOCK_ROWS);
+  for (let i = 0; i < blockStarts.length; i++) {
+    const start = blockStarts[i];
+    const end = Math.min(start + BLOCK_ROWS, blockStarts[i + 1] ?? rows.length);
+    const block = rows.slice(start, end);
     const date = cellAt(block, 0, 0, 1);
     if (!date) continue;
 
@@ -214,8 +237,8 @@ export const parseLiveGames = (rows: string[][], season: Season): LiveGame[] => 
 
     const time = cellAt(block, 1, 0, 1);
 
-    // Confirmed done-signal: period-3 shots-on-goal filled in for both teams.
-    const isFinished = home.shotsByPeriod[2] !== "" && away.shotsByPeriod[2] !== "";
+    // Confirmed done-signal: period-3 shots-on-goal filled in for either team.
+    const isFinished = periodFilled(home, away, 2);
     // Whether anyone has actually typed anything into the scoresheet yet —
     // no longer what gates "in progress" (that's the schedule, below), but
     // still what the live screen uses to tell a real 0-0 from a game that
@@ -246,6 +269,7 @@ export const parseLiveGames = (rows: string[][], season: Season): LiveGame[] => 
       homeScore: home.goals.length,
       awayScore: away.goals.length,
       period: currentPeriod(home, away),
+      scheduledStart,
       isInProgress,
       isFinished,
       hasScoresheetData,
