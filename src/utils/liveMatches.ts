@@ -345,10 +345,10 @@ const teamGameEvents = (team: LiveTeam, teamName: string): GameEvent[] => {
   return [...goalEvents, ...penaltyEvents];
 };
 
-// Chronological goal/penalty list for Match Detail's "Évènements" table.
+// Most-recent-first goal/penalty list for Match Detail's "Évènements" table.
 export const gameEvents = (game: LiveGame): GameEvent[] =>
   [...teamGameEvents(game.home, game.home.name), ...teamGameEvents(game.away, game.away.name)].sort(
-    (a, b) => a.period - b.period || timeToSeconds(a.time) - timeToSeconds(b.time)
+    (a, b) => b.period - a.period || timeToSeconds(b.time) - timeToSeconds(a.time)
   );
 
 const bumpStandout = (
