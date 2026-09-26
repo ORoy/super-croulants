@@ -1,5 +1,5 @@
 import blaxtonLogo from "../assets/sponsors/blaxton.webp";
-import assuranciaLogo from "../assets/sponsors/assurancia-groupe-tardif.svg";
+import assuranciaLogo from "../assets/sponsors/assurancia-groupe-tardif.png";
 import leGourmetLogo from "../assets/sponsors/le-gourmet.png";
 
 // Hardcoded on purpose: sponsors change rarely and there's no sheet/backend
