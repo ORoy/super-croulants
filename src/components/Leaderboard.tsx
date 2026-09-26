@@ -7,6 +7,7 @@ import { playerTabs, type Season } from "../config/sheets";
 import { colors } from "../theme/tokens";
 import { normalizeRow } from "../utils/normalizeRow";
 import { encodePlayerId } from "../utils/playerId";
+import type { RowData } from "../utils/sheetFetch";
 
 const REGULAR_SERIES_BOTH_COLUMNS: TableColumn[] = [
   { key: "RANG", label: "RANG" },
@@ -23,6 +24,22 @@ const REGULAR_SERIES_BOTH_COLUMNS: TableColumn[] = [
 // tracks the current season, so its column key can't be a static literal.
 const PROGRESSION_KEY_PLACEHOLDER = "__PROGRESSION_KEY__";
 
+const GOALIE_COLUMNS: TableColumn[] = [
+  { key: "RANG", label: "RANG" },
+  { key: "JOUEURS", label: "JOUEUR" },
+  { key: "ÉQUIPE", label: "ÉQUIPE" },
+  { key: "PJ", label: "PJ" },
+  { key: "% ÉFFICACITÉ", label: "% EFFICACITÉ" },
+  { key: "TOTAL LANCERS REÇUS", label: "LANCERS REÇUS" },
+  { key: "MOY LANCERS / MATCH", label: "MOY LANCERS/MATCH" },
+  { key: "BUTS CONTRE", label: "BUTS CONTRE" },
+];
+
+// "Gardiens Remplaçants"' RANG cells read "1 Remplaçant", "2 Remplaçant", …
+// (the sheet's own slot label) instead of a bare number like every other
+// tab's RANG column — strip it down to match.
+const stripRangSuffix = (row: RowData): RowData => ({ ...row, RANG: row.RANG?.match(/^\d+/)?.[0] ?? row.RANG });
+
 interface Mode {
   /** Matches an entry in `playerTabs` (drives the sheet range fetched). */
   sheetLabel: string;
@@ -33,6 +50,8 @@ interface Mode {
   nameKey: string;
   /** Row key holding the player's team, when this mode's columns include one. */
   teamKey?: string;
+  /** Optional per-row cleanup applied before rendering (e.g. RANG reformatting). */
+  transformRow?: (row: RowData) => RowData;
 }
 
 const MODES: Mode[] = [
@@ -85,18 +104,17 @@ const MODES: Mode[] = [
   {
     sheetLabel: "Gardiens",
     displayLabel: "Gardiens",
-    columns: [
-      { key: "RANG", label: "RANG" },
-      { key: "JOUEURS", label: "JOUEUR" },
-      { key: "ÉQUIPE", label: "ÉQUIPE" },
-      { key: "PJ", label: "PJ" },
-      { key: "% ÉFFICACITÉ", label: "% EFFICACITÉ" },
-      { key: "TOTAL LANCERS REÇUS", label: "LANCERS REÇUS" },
-      { key: "MOY LANCERS / MATCH", label: "MOY LANCERS/MATCH" },
-      { key: "BUTS CONTRE", label: "BUTS CONTRE" },
-    ],
+    columns: GOALIE_COLUMNS,
     nameKey: "JOUEURS",
     teamKey: "ÉQUIPE",
+  },
+  {
+    sheetLabel: "Gardiens Remplaçants",
+    displayLabel: "Gardiens Remplaçants",
+    columns: GOALIE_COLUMNS,
+    nameKey: "JOUEURS",
+    teamKey: "ÉQUIPE",
+    transformRow: stripRangSuffix,
   },
   {
     sheetLabel: "1997-1998",
@@ -162,8 +180,12 @@ export default function Leaderboard() {
   );
 
   const rows = useMemo(
-    () => data.map(normalizeRow).filter(row => (row[activeMode.nameKey] ?? "").trim() !== ""),
-    [data, activeMode.nameKey]
+    () =>
+      data
+        .map(normalizeRow)
+        .map(row => (activeMode.transformRow ? activeMode.transformRow(row) : row))
+        .filter(row => (row[activeMode.nameKey] ?? "").trim() !== ""),
+    [data, activeMode]
   );
 
   return (

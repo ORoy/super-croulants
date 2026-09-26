@@ -14,6 +14,10 @@ import StatCard from "./StatCard";
 
 const GAME_LOG_GRID_COLUMNS = "1fr 2fr 50px 50px 50px";
 
+// "Gardiens Remplaçants" rows carry this literal team value (a league-wide
+// substitute pool, not tied to one team) — no /teams page to link to.
+const NO_TEAM_PLACEHOLDER = "----";
+
 const matchesPlayer = (row: Record<string, string>, nameKey: string, teamKey: string, name: string, team: string) => {
   if (!equalsIgnoreCase(row[nameKey] ?? "", name)) {
     return false;
@@ -33,10 +37,12 @@ export default function PlayerDetail() {
   const skaterSheet = playerTabs.find(tab => tab.label === "Saison Régulière")!;
   const penaltySheet = playerTabs.find(tab => tab.label === "Pénalités")!;
   const goalieSheet = playerTabs.find(tab => tab.label === "Gardiens")!;
+  const subGoalieSheet = playerTabs.find(tab => tab.label === "Gardiens Remplaçants")!;
 
   const skaterResult = useSheetData(spreadsheetId, skaterSheet);
   const penaltyResult = useSheetData(spreadsheetId, penaltySheet);
   const goalieResult = useSheetData(spreadsheetId, goalieSheet);
+  const subGoalieResult = useSheetData(spreadsheetId, subGoalieSheet);
   const matchSheetResult = useSheetRawData(spreadsheetId, liveMatchSheet(season));
   const teamColors = useTeamColors();
   const { getTeamColor } = teamColors;
@@ -44,10 +50,13 @@ export default function PlayerDetail() {
   const skaterRows = useMemo(() => skaterResult.data.map(normalizeRow), [skaterResult.data]);
   const penaltyRows = useMemo(() => penaltyResult.data.map(normalizeRow), [penaltyResult.data]);
   const goalieRows = useMemo(() => goalieResult.data.map(normalizeRow), [goalieResult.data]);
+  const subGoalieRows = useMemo(() => subGoalieResult.data.map(normalizeRow), [subGoalieResult.data]);
 
   const goalie = useMemo(
-    () => goalieRows.find(row => matchesPlayer(row, "JOUEURS", "ÉQUIPE", name, team)),
-    [goalieRows, name, team]
+    () =>
+      goalieRows.find(row => matchesPlayer(row, "JOUEURS", "ÉQUIPE", name, team)) ??
+      subGoalieRows.find(row => matchesPlayer(row, "JOUEURS", "ÉQUIPE", name, team)),
+    [goalieRows, subGoalieRows, name, team]
   );
   const skater = useMemo(
     () => (goalie ? undefined : skaterRows.find(row => matchesPlayer(row, "JOUEURS", "ÉQUIPES", name, team))),
@@ -58,7 +67,7 @@ export default function PlayerDetail() {
     [penaltyRows, name, team]
   );
 
-  const { loading, error } = combineFetchStates(skaterResult, penaltyResult, goalieResult, teamColors);
+  const { loading, error } = combineFetchStates(skaterResult, penaltyResult, goalieResult, subGoalieResult, teamColors);
   const player = goalie ?? skater;
   const playerTeam = goalie?.["ÉQUIPE"] ?? skater?.["ÉQUIPES"] ?? team;
   const teamColor = getTeamColor(playerTeam);
@@ -115,12 +124,16 @@ export default function PlayerDetail() {
             {name}
           </div>
           <div style={{ fontSize: 14, color: colors.mutedText, marginTop: 6 }}>
-            <span
-              onClick={() => navigate(`/${season}/teams/${encodeURIComponent(playerTeam)}`)}
-              style={{ cursor: "pointer" }}
-            >
-              {playerTeam}
-            </span>
+            {playerTeam === NO_TEAM_PLACEHOLDER ? (
+              <span>{playerTeam}</span>
+            ) : (
+              <span
+                onClick={() => navigate(`/${season}/teams/${encodeURIComponent(playerTeam)}`)}
+                style={{ cursor: "pointer" }}
+              >
+                {playerTeam}
+              </span>
+            )}
             {goalie ? " · Gardien" : ""}
           </div>
         </div>

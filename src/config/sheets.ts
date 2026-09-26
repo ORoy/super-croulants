@@ -39,6 +39,7 @@ export const playerTabs: (SheetRange & { label: string })[] = [
   { label: "Pénalités", range: "CM2:CP72" },
   { label: "Joueurs étoiles", range: "CU2:CY72" },
   { label: "Gardiens", range: "T2:AA6" },
+  { label: "Gardiens Remplaçants", range: "T99:AA105" },
   { label: "1997-1998", range: "L2:V307", sheetName: PLAYERS_ALL_TIME_SHEET_NAME },
 ];
 
